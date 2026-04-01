@@ -1,0 +1,11 @@
+# Archivos que Docker NO debe copiar al construir la imagen
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.local
+.DS_Store
+*.log
+dist
+build

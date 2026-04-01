@@ -1,0 +1,40 @@
+# ── Variables de entorno (NUNCA al repositorio) ──────────────
+.env
+.env.local
+.env.*.local
+
+# ── Dependencias Node ────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Build / Dist ─────────────────────────────────────────────
+dist/
+build/
+*.tsbuildinfo
+
+# ── Sistema operativo ────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDEs y editores ──────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Logs y datos locales ─────────────────────────────────────
+logs/
+*.log
+data/
+
+# ── Docker local (volúmenes de datos) ────────────────────────
+postgres_data/
+
+# ── Coverage y tests ─────────────────────────────────────────
+coverage/
+
+# ── Builds ──────────────────────────────────────────────────
+dist/
+build/
