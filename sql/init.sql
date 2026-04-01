@@ -17,14 +17,22 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ── Tabla GRUPOS ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS grupos (
-  id           SERIAL PRIMARY KEY,
-  nombre       VARCHAR(255) NOT NULL UNIQUE,
-  asignatura   VARCHAR(255) NOT NULL,
-  semestre     VARCHAR(50),
-  profesor_id  INT NOT NULL DEFAULT 1,
-  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id                         SERIAL PRIMARY KEY,
+  nombre                     VARCHAR(255) NOT NULL UNIQUE,
+  asignatura                 VARCHAR(255) NOT NULL,
+  semestre                   VARCHAR(50),
+  total_clases_planificadas  INT NULL,
+  profesor_id                INT NOT NULL DEFAULT 1,
+  created_at                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT tcp_positivo CHECK (total_clases_planificadas IS NULL OR total_clases_planificadas > 0)
 );
+
+-- Migración idempotente: agrega la columna si el contenedor ya existía
+DO $$ BEGIN
+  ALTER TABLE grupos ADD COLUMN total_clases_planificadas INT NULL
+    CONSTRAINT tcp_positivo CHECK (total_clases_planificadas IS NULL OR total_clases_planificadas > 0);
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 -- ── Tabla ESTUDIANTES ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS estudiantes (

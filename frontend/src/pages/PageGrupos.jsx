@@ -49,7 +49,7 @@ export default function PageGrupos() {
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-800">Sistema de Gestión Docente</h1>
-          <p className="text-xs text-slate-500">Universidad de Ciencias Informáticas</p>
+          <p className="text-xs text-slate-500">Universidad de las Ciencias Informáticas</p>
         </div>
       </header>
 

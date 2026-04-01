@@ -25,14 +25,18 @@ router.get('/:id', async (req, res, next) => {
 // POST /api/grupos — crear grupo
 router.post('/', async (req, res, next) => {
   try {
-    const { nombre, asignatura, semestre } = req.body;
+    const { nombre, asignatura, semestre, total_clases_planificadas } = req.body;
     if (!nombre?.trim())      return res.status(400).json({ error: 'nombre es obligatorio' });
     if (!asignatura?.trim())  return res.status(400).json({ error: 'asignatura es obligatoria' });
 
+    const tcp = total_clases_planificadas != null ? parseInt(total_clases_planificadas, 10) : null;
+    if (tcp !== null && (isNaN(tcp) || tcp <= 0))
+      return res.status(400).json({ error: 'total_clases_planificadas debe ser un entero positivo' });
+
     const result = await pool.query(
-      `INSERT INTO grupos (nombre, asignatura, semestre, profesor_id)
-       VALUES ($1, $2, $3, 1) RETURNING *`,
-      [nombre.trim(), asignatura.trim(), semestre?.trim() || null]
+      `INSERT INTO grupos (nombre, asignatura, semestre, profesor_id, total_clases_planificadas)
+       VALUES ($1, $2, $3, 1, $4) RETURNING *`,
+      [nombre.trim(), asignatura.trim(), semestre?.trim() || null, tcp]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -44,7 +48,7 @@ router.post('/', async (req, res, next) => {
 // PUT /api/grupos/:id — actualizar grupo
 router.put('/:id', async (req, res, next) => {
   try {
-    const { nombre, asignatura, semestre } = req.body;
+    const { nombre, asignatura, semestre, total_clases_planificadas } = req.body;
 
     // Construcción dinámica del SET
     const campos = [];
@@ -53,6 +57,13 @@ router.put('/:id', async (req, res, next) => {
     if (nombre      !== undefined) { campos.push(`nombre = $${idx++}`);     valores.push(nombre.trim()); }
     if (asignatura  !== undefined) { campos.push(`asignatura = $${idx++}`); valores.push(asignatura.trim()); }
     if (semestre    !== undefined) { campos.push(`semestre = $${idx++}`);   valores.push(semestre?.trim() || null); }
+    if (total_clases_planificadas !== undefined) {
+      const tcp = total_clases_planificadas != null ? parseInt(total_clases_planificadas, 10) : null;
+      if (tcp !== null && (isNaN(tcp) || tcp <= 0))
+        return res.status(400).json({ error: 'total_clases_planificadas debe ser un entero positivo' });
+      campos.push(`total_clases_planificadas = $${idx++}`);
+      valores.push(tcp);
+    }
 
     if (!campos.length) return res.status(400).json({ error: 'No hay campos para actualizar' });
 

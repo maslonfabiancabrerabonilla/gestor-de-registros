@@ -15,13 +15,22 @@ const OBS_CORTE  = { B: 'Excelente', R: 'Revisar',  M: 'Riesgo', null: '' };
 // en 2 queries (evita N+1)
 // ─────────────────────────────────────────────────────────────
 async function statsGrupo(grupo_id) {
+  // Total de clases planificadas (si está definido) y clases dadas
+  const grupoRes = await pool.query(
+    `SELECT total_clases_planificadas FROM grupos WHERE id = $1`,
+    [grupo_id]
+  );
+  const total_clases_planificadas = grupoRes.rows[0]?.total_clases_planificadas ?? null;
+
   // Total de turnos tipo clase para el grupo
   const clasesRes = await pool.query(
     `SELECT COUNT(*)::int AS total_clases FROM turnos
      WHERE grupo_id = $1 AND tipo IN ('C', 'CP', 'PL') AND deleted_at IS NULL`,
     [grupo_id]
   );
-  const total_clases = clasesRes.rows[0].total_clases;
+  const total_clases_dadas = clasesRes.rows[0].total_clases;
+  const esProvisional      = total_clases_planificadas === null;
+  const denominador        = total_clases_planificadas ?? total_clases_dadas;
 
   // Asistencias y promedios por estudiante
   const statsRes = await pool.query(
@@ -47,8 +56,9 @@ async function statsGrupo(grupo_id) {
   return statsRes.rows.map(row => {
     const asistencias = row.asistencias;
     const promedio    = row.promedio ? parseFloat(row.promedio) : null;
-    const pct         = total_clases > 0
-      ? Math.round((asistencias / total_clases) * 1000) / 10
+    const faltas      = total_clases_dadas - asistencias;
+    const pct         = denominador > 0
+      ? Math.max(0, Math.round(((denominador - faltas) / denominador) * 1000) / 10)
       : 100;
 
     let corte = null;
@@ -63,9 +73,10 @@ async function statsGrupo(grupo_id) {
       promedio,
       porcentaje_asistencia: pct,
       asistencias,
-      total_clases,
+      total_clases:        total_clases_dadas,
       total_evaluaciones:  row.total_evaluaciones,
       corte,
+      provisional:         esProvisional,
     };
   });
 }

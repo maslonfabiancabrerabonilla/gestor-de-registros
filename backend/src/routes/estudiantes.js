@@ -25,6 +25,13 @@ const upload = multer({
 // Helpers de cálculo (reutilizados en /estadisticas)
 // ─────────────────────────────────────────────────────────────
 async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
+  // Clases planificadas del grupo (para denominar % asistencia)
+  const grupoRes = await pool.query(
+    'SELECT total_clases_planificadas FROM grupos WHERE id = $1',
+    [grupo_id]
+  );
+  const total_clases_planificadas = grupoRes.rows[0]?.total_clases_planificadas ?? null;
+
   // Asistencia (solo clases: C, CP, PL)
   const asistRes = await pool.query(
     `SELECT
@@ -38,8 +45,12 @@ async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
     [estudiante_id, grupo_id]
   );
   const { asistencias, total_clases } = asistRes.rows[0];
+
+  const esProvisional = total_clases_planificadas === null;
+  const denominador   = total_clases_planificadas ?? total_clases;
+  const faltas        = total_clases - asistencias;
   const porcentaje_asistencia =
-    total_clases > 0 ? Math.round((asistencias / total_clases) * 1000) / 10 : 100;
+    denominador > 0 ? Math.max(0, Math.round(((denominador - faltas) / denominador) * 1000) / 10) : 100;
 
   // Calificaciones (solo no-NULL)
   const calRes = await pool.query(
@@ -64,9 +75,9 @@ async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
   }
 
   const alerta_inasistencia =
-    total_clases > 0 && (total_clases - asistencias) / total_clases > 0.20;
+    !esProvisional && denominador > 0 && faltas / denominador > 0.20;
 
-  return { asistencias, total_clases, porcentaje_asistencia, promedio, total_evaluaciones, corte, alerta_inasistencia };
+  return { asistencias, total_clases, porcentaje_asistencia, promedio, total_evaluaciones, corte, alerta_inasistencia, provisional: esProvisional };
 }
 
 // ─────────────────────────────────────────────────────────────

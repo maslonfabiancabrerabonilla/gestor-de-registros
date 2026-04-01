@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createGrupo } from '../services/api.js';
 
 export default function ModalCrearGrupo({ onCerrar, onCreado }) {
-  const [form, setForm]     = useState({ nombre: '', asignatura: '', semestre: '' });
+  const [form, setForm]     = useState({ nombre: '', asignatura: '', semestre: '', total_clases_planificadas: '' });
   const [error, setError]   = useState('');
   const [cargando, setCargando] = useState(false);
 
@@ -18,7 +18,13 @@ export default function ModalCrearGrupo({ onCerrar, onCreado }) {
 
     setCargando(true);
     try {
-      const nuevo = await createGrupo(form);
+      const payload = {
+        ...form,
+        total_clases_planificadas: form.total_clases_planificadas !== ''
+          ? parseInt(form.total_clases_planificadas, 10)
+          : null,
+      };
+      const nuevo = await createGrupo(payload);
       onCreado(nuevo);
     } catch (err) {
       setError(err.message);
@@ -71,6 +77,23 @@ export default function ModalCrearGrupo({ onCerrar, onCreado }) {
               placeholder="Ej: 2026-1"
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Total de clases planificadas
+              <span className="ml-1 text-slate-400 font-normal">(opcional)</span>
+            </label>
+            <input
+              name="total_clases_planificadas"
+              type="number"
+              min="1"
+              value={form.total_clases_planificadas}
+              onChange={handleChange}
+              placeholder="Ej: 20"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-slate-400 mt-1">Define el denominador para calcular el % de asistencia.</p>
           </div>
 
           {error && (

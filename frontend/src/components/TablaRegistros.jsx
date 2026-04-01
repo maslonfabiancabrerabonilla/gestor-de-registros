@@ -24,17 +24,21 @@ const CORTE_BADGE = {
 const TIPOS_CLASE = ['C', 'CP', 'PL'];
 
 // ── Cálculo de estadísticas en el cliente ─────────────────────
-function calcStats(est, turnos, registrosMap) {
+function calcStats(est, turnos, registrosMap, totalClasesPlanificadas) {
   const turnosClase = turnos.filter(t => TIPOS_CLASE.includes(t.tipo));
 
   const asistencias = turnosClase.filter(
     t => registrosMap[t.id]?.[est.id]?.asistencia === 'A'
   ).length;
 
-  const totalClases = turnosClase.length;
-  const pct = totalClases > 0
-    ? Math.round((asistencias / totalClases) * 1000) / 10
-    : 100;
+  const clasesDadas   = turnosClase.length;
+  const esProvisional = totalClasesPlanificadas == null;
+  const denominador   = totalClasesPlanificadas ?? clasesDadas;
+  const faltas        = clasesDadas - asistencias;
+  const pctInasistencia = denominador > 0
+    ? Math.round((faltas / denominador) * 1000) / 10
+    : 0;
+  const pct = Math.max(0, 100 - pctInasistencia);
 
   const cals = turnos
     .map(t => registrosMap[t.id]?.[est.id]?.calificacion)
@@ -51,8 +55,9 @@ function calcStats(est, turnos, registrosMap) {
     else                                   corte = 'M';
   }
 
-  return { asistencias, totalClases, pct, promedio, corte,
-           alerta: totalClases > 0 && (totalClases - asistencias) / totalClases > 0.20 };
+  const alerta = !esProvisional && denominador > 0 && faltas / denominador > 0.20;
+
+  return { asistencias, clasesDadas, denominador, pct, promedio, corte, alerta, esProvisional };
 }
 
 function formatFecha(str) {
@@ -75,6 +80,7 @@ export default function TablaRegistros({
   onBatchSave,
   onEditarTurno,
   onEliminarTurno,
+  totalClasesPlanificadas,
 }) {
   // cambios[turno_id][est_id] = { asistencia?, calificacion? }
   const [cambios,    setCambios]    = useState({});
@@ -262,7 +268,7 @@ export default function TablaRegistros({
         {/* ── Cuerpo ────────────────────────────────────────── */}
         <tbody>
           {estudiantes.map((est, idx) => {
-            const stats = calcStats(est, turnos, registrosMap);
+            const stats = calcStats(est, turnos, registrosMap, totalClasesPlanificadas);
             const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
 
             return (
@@ -272,9 +278,12 @@ export default function TablaRegistros({
                 <td className={`sticky left-0 z-10 border-b border-r border-slate-200 px-4 py-2 font-medium text-slate-800 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-1.5">
                     {stats.alerta && (
-                      <span title={`Inasistencias: ${(100 - stats.pct).toFixed(0)}%`} className="cursor-help">⚠️</span>
+                      <span title={`Inasistencias: ${(100 - stats.pct).toFixed(1)}%`} className="cursor-help">⚠️</span>
                     )}
-                    <span className="truncate max-w-[170px]" title={est.nombre}>{est.nombre}</span>
+                    {stats.esProvisional && stats.clasesDadas > 0 && (
+                      <span title="Sin total planificado: % provisional basado en clases dadas" className="text-[10px] text-slate-400 font-normal">(prov.)</span>
+                    )}
+                    <span className="truncate max-w-[160px]" title={est.nombre}>{est.nombre}</span>
                   </div>
                 </td>
 
@@ -331,11 +340,11 @@ export default function TablaRegistros({
                 {turnos.length > 0 && <>
                   <td className="border-b border-r border-l border-slate-200 px-3 py-2 text-center bg-slate-50">
                     <span className={`text-sm font-semibold ${
-                      stats.totalClases === 0 ? 'text-slate-400' :
+                      stats.clasesDadas === 0 ? 'text-slate-400' :
                       stats.pct >= 80 ? 'text-green-700' :
                       stats.pct >= 70 ? 'text-amber-600' : 'text-red-600'
                     }`}>
-                      {stats.totalClases > 0 ? `${stats.pct}%` : '—'}
+                      {stats.clasesDadas > 0 ? `${stats.pct}%` : '—'}
                     </span>
                   </td>
                   <td className="border-b border-r border-slate-200 px-3 py-2 text-center bg-slate-50">

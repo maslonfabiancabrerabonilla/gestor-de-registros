@@ -196,6 +196,7 @@ export default function PageRegistros() {
           onBatchSave={(turnoId, registros) => batchSave(turnoId, registros).then(cargar)}
           onEditarTurno={abrirEditarTurno}
           onEliminarTurno={confirmarEliminarTurno}
+          totalClasesPlanificadas={grupo?.total_clases_planificadas ?? null}
         />
       </main>
 
