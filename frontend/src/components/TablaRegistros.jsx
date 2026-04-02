@@ -80,6 +80,8 @@ export default function TablaRegistros({
   onBatchSave,
   onEditarTurno,
   onEliminarTurno,
+  onEditarEstudiante,
+  onEliminarEstudiante,
   totalClasesPlanificadas,
 }) {
   // cambios[turno_id][est_id] = { asistencia?, calificacion? }
@@ -283,7 +285,17 @@ export default function TablaRegistros({
                     {stats.esProvisional && stats.clasesDadas > 0 && (
                       <span title="Sin total planificado: % provisional basado en clases dadas" className="text-[10px] text-slate-400 font-normal">(prov.)</span>
                     )}
-                    <span className="truncate max-w-[160px]" title={est.nombre}>{est.nombre}</span>
+                    <span className="truncate max-w-[130px]" title={est.nombre}>{est.nombre}</span>
+                    <button
+                      onClick={() => onEditarEstudiante?.(est)}
+                      title="Editar estudiante"
+                      className="ml-auto text-slate-300 hover:text-blue-400 transition text-xs leading-none shrink-0"
+                    >✏️</button>
+                    <button
+                      onClick={() => onEliminarEstudiante?.(est)}
+                      title="Eliminar estudiante"
+                      className="text-slate-300 hover:text-red-400 transition text-xs leading-none shrink-0"
+                    >🗑</button>
                   </div>
                 </td>
 

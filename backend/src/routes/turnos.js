@@ -50,13 +50,6 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
     );
     const turno = result.rows[0];
 
-    // Contar estudiantes activos como "registros pendientes"
-    const pendRes = await client.query(
-      `SELECT COUNT(*)::int AS count FROM estudiantes
-       WHERE grupo_id = $1 AND deleted_at IS NULL`,
-      [grupo_id]
-    );
-
     await client.query(
       `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
        VALUES (1, $1, 'crear_turno', $2)`,
@@ -64,7 +57,7 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
     );
 
     await client.query('COMMIT');
-    res.status(201).json({ ...turno, registros_pendientes: pendRes.rows[0].count });
+    res.status(201).json(turno);
   } catch (err) {
     await client.query('ROLLBACK');
     next(err);

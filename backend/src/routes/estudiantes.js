@@ -201,6 +201,7 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     // 5. Inserción en transacción atómica
     await client.query('BEGIN');
 
+    // Obtener el máximo orden actual para insertar al final temporalmente
     const maxOrdenRes = await client.query(
       `SELECT COALESCE(MAX(orden_alfabetico), 0) AS max
        FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL`,
@@ -215,6 +216,17 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
         [grupo_id, nombre, orden]
       );
     }
+
+    // Reordenar todo el grupo alfabéticamente tras la inserción masiva
+    await client.query(
+      `WITH ranked AS (
+         SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
+         FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL
+       )
+       UPDATE estudiantes e SET orden_alfabetico = ranked.rn
+       FROM ranked WHERE e.id = ranked.id`,
+      [grupo_id]
+    );
 
     await client.query(
       `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
@@ -289,22 +301,46 @@ router.post('/:grupo_id/estudiantes', async (req, res, next) => {
 // PUT /api/grupos/:grupo_id/estudiantes/:id — actualizar nombre
 // ─────────────────────────────────────────────────────────────
 router.put('/:grupo_id/estudiantes/:id', async (req, res, next) => {
+  const client = await pool.connect();
   try {
     const { grupo_id, id } = req.params;
     const { nombre }       = req.body;
     if (!nombre?.trim()) return res.status(400).json({ error: 'nombre es obligatorio' });
+    if (!NOMBRE_REGEX.test(nombre.trim()))
+      return res.status(400).json({ error: 'El nombre solo puede contener letras, espacios, guiones y puntos' });
 
-    const result = await pool.query(
+    await client.query('BEGIN');
+
+    const result = await client.query(
       `UPDATE estudiantes SET nombre = $1
        WHERE id = $2 AND grupo_id = $3 AND deleted_at IS NULL
        RETURNING *`,
       [nombre.trim(), id, grupo_id]
     );
-    if (!result.rows.length) return res.status(404).json({ error: 'Estudiante no encontrado o ya eliminado' });
+    if (!result.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Estudiante no encontrado o ya eliminado' });
+    }
+
+    // Reordenar todo el grupo alfabéticamente tras el cambio de nombre
+    await client.query(
+      `WITH ranked AS (
+         SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
+         FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL
+       )
+       UPDATE estudiantes e SET orden_alfabetico = ranked.rn
+       FROM ranked WHERE e.id = ranked.id`,
+      [grupo_id]
+    );
+
+    await client.query('COMMIT');
     res.json(result.rows[0]);
   } catch (err) {
+    await client.query('ROLLBACK');
     if (err.code === '23505') return res.status(409).json({ error: 'Ya existe un estudiante con ese nombre en el grupo' });
     next(err);
+  } finally {
+    client.release();
   }
 });
 

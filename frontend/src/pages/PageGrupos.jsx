@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate }         from 'react-router-dom';
 import { getGrupos, deleteGrupo } from '../services/api.js';
 import ModalCrearGrupo         from '../components/ModalCrearGrupo.jsx';
+import ModalConfirmar          from '../components/ModalConfirmar.jsx';
 
 export default function PageGrupos() {
   const navigate = useNavigate();
@@ -9,8 +10,10 @@ export default function PageGrupos() {
   const [grupos,        setGrupos]        = useState([]);
   const [cargando,      setCargando]      = useState(true);
   const [error,         setError]         = useState('');
-  const [modalAbierto,  setModalAbierto]  = useState(false);
-  const [eliminando,    setEliminando]    = useState(null); // id del grupo que se está eliminando
+  const [modalAbierto,    setModalAbierto]    = useState(false);
+  const [grupoEliminar,   setGrupoEliminar]   = useState(null);
+  const [eliminando,      setEliminando]      = useState(false);
+  const [errModal,        setErrModal]        = useState('');
 
   // ── Cargar grupos ──────────────────────────────────────────
   const cargarGrupos = () => {
@@ -29,16 +32,18 @@ export default function PageGrupos() {
     setModalAbierto(false);
   };
 
-  const handleEliminar = async (grupo) => {
-    if (!window.confirm(`¿Eliminar "${grupo.nombre}"? Se borrarán todos sus datos.`)) return;
-    setEliminando(grupo.id);
+  const confirmarEliminar = (grupo) => { setErrModal(''); setGrupoEliminar(grupo); };
+
+  const ejecutarEliminar = async () => {
+    setEliminando(true); setErrModal('');
     try {
-      await deleteGrupo(grupo.id);
-      setGrupos(prev => prev.filter(g => g.id !== grupo.id));
+      await deleteGrupo(grupoEliminar.id);
+      setGrupos(prev => prev.filter(g => g.id !== grupoEliminar.id));
+      setGrupoEliminar(null);
     } catch (err) {
-      alert(`Error al eliminar: ${err.message}`);
+      setErrModal(err.message);
     } finally {
-      setEliminando(null);
+      setEliminando(false);
     }
   };
 
@@ -115,11 +120,10 @@ export default function PageGrupos() {
                     Abrir →
                   </button>
                   <button
-                    onClick={() => handleEliminar(grupo)}
-                    disabled={eliminando === grupo.id}
-                    className="px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg transition disabled:opacity-40"
+                    onClick={() => confirmarEliminar(grupo)}
+                    className="px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg transition"
                   >
-                    {eliminando === grupo.id ? '...' : 'Eliminar'}
+                    Eliminar
                   </button>
                 </div>
               </li>
@@ -133,6 +137,20 @@ export default function PageGrupos() {
         <ModalCrearGrupo
           onCerrar={() => setModalAbierto(false)}
           onCreado={handleCreado}
+        />
+      )}
+
+      {/* Modal confirmar eliminar grupo */}
+      {grupoEliminar && (
+        <ModalConfirmar
+          titulo="Eliminar grupo"
+          mensaje={`¿Eliminar "${grupoEliminar.nombre}"? Se borrarán todos sus datos permanentemente.`}
+          labelConfirmar="Eliminar"
+          variante="peligro"
+          cargando={eliminando}
+          error={errModal}
+          onConfirmar={ejecutarEliminar}
+          onCerrar={() => { setGrupoEliminar(null); setErrModal(''); }}
         />
       )}
     </div>

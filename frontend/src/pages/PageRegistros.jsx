@@ -3,13 +3,14 @@ import { useParams, useNavigate }            from 'react-router-dom';
 import {
   getGrupo, getEstudiantes, getTurnos, getRegistrosTurno,
   createTurno, updateTurno, deleteTurno,
-  createEstudiante, deleteEstudiante, bulkImportEstudiantes,
+  createEstudiante, updateEstudiante, deleteEstudiante, bulkImportEstudiantes,
   batchSave, generarCorte, exportarMatriz,
 } from '../services/api.js';
-import TablaRegistros  from '../components/TablaRegistros.jsx';
-import ModalTurno      from '../components/ModalTurno.jsx';
-import ModalEstudiante from '../components/ModalEstudiante.jsx';
-import ModalConfirmar  from '../components/ModalConfirmar.jsx';
+import TablaRegistros          from '../components/TablaRegistros.jsx';
+import ModalTurno              from '../components/ModalTurno.jsx';
+import ModalEstudiante         from '../components/ModalEstudiante.jsx';
+import ModalEditarEstudiante   from '../components/ModalEditarEstudiante.jsx';
+import ModalConfirmar          from '../components/ModalConfirmar.jsx';
 
 function descargarBlob(blob, nombreArchivo) {
   const url = URL.createObjectURL(blob);
@@ -35,6 +36,7 @@ export default function PageRegistros() {
   const [turnoEditar,        setTurnoEditar]        = useState(null);
   const [turnoEliminar,      setTurnoEliminar]      = useState(null);
   const [modalEstudiante,    setModalEstudiante]    = useState(false);
+  const [estudianteEditar,   setEstudianteEditar]   = useState(null);
   const [estudianteEliminar, setEstudianteEliminar] = useState(null);
 
   const [errModal,      setErrModal]      = useState('');
@@ -92,6 +94,7 @@ export default function PageRegistros() {
   };
 
   const confirmarEliminarEst = (est) => { setErrModal(''); setEstudianteEliminar(est); };
+  const abrirEditarEstudiante = (est) => { setEstudianteEditar(est); };
   const ejecutarEliminarEst  = async () => {
     setCargandoModal(true); setErrModal('');
     try {
@@ -196,6 +199,8 @@ export default function PageRegistros() {
           onBatchSave={(turnoId, registros) => batchSave(turnoId, registros).then(cargar)}
           onEditarTurno={abrirEditarTurno}
           onEliminarTurno={confirmarEliminarTurno}
+          onEliminarEstudiante={confirmarEliminarEst}
+          onEditarEstudiante={abrirEditarEstudiante}
           totalClasesPlanificadas={grupo?.total_clases_planificadas ?? null}
         />
       </main>
@@ -230,6 +235,16 @@ export default function PageRegistros() {
           bulkImportEstudiantes={bulkImportEstudiantes}
           onGuardado={() => { setModalEstudiante(false); cargar(); }}
           onCerrar={() => setModalEstudiante(false)}
+        />
+      )}
+
+      {estudianteEditar && (
+        <ModalEditarEstudiante
+          grupoId={id}
+          estudiante={estudianteEditar}
+          updateEstudiante={updateEstudiante}
+          onGuardado={() => { setEstudianteEditar(null); cargar(); }}
+          onCerrar={() => setEstudianteEditar(null)}
         />
       )}
 
