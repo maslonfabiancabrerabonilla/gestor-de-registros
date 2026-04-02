@@ -9,13 +9,20 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
   const [error,       setError]       = useState('');
   const [resultado,   setResultado]   = useState(null); // para mostrar resumen de importación
 
+  const NOMBRE_REGEX = /^[\p{L}\s\-.]+$/u;
+
   const guardarManual = async (e) => {
     e.preventDefault();
-    if (!nombre.trim()) return;
+    const nombreLimpio = nombre.trim();
+    if (!nombreLimpio) return;
+    if (!NOMBRE_REGEX.test(nombreLimpio)) {
+      setError('El nombre solo puede contener letras, espacios, guiones y puntos.');
+      return;
+    }
     setError('');
     setCargando(true);
     try {
-      await createEstudiante(grupoId, { nombre: nombre.trim() });
+      await createEstudiante(grupoId, { nombre: nombreLimpio });
       onGuardado();
     } catch (err) {
       setError(err.message);

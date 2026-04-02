@@ -238,26 +238,50 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
 // ─────────────────────────────────────────────────────────────
 // POST /api/grupos/:grupo_id/estudiantes — crear individual
 // ─────────────────────────────────────────────────────────────
-router.post('/:grupo_id/estudiantes', async (req, res, next) => {
-  try {
-    const { grupo_id }   = req.params;
-    const { nombre }     = req.body;
-    if (!nombre?.trim()) return res.status(400).json({ error: 'nombre es obligatorio' });
+const NOMBRE_REGEX = /^[\p{L}\s\-.]+$/u;
 
-    const maxRes = await pool.query(
+router.post('/:grupo_id/estudiantes', async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    const { grupo_id } = req.params;
+    const { nombre }   = req.body;
+    if (!nombre?.trim()) return res.status(400).json({ error: 'nombre es obligatorio' });
+    if (!NOMBRE_REGEX.test(nombre.trim()))
+      return res.status(400).json({ error: 'El nombre solo puede contener letras, espacios, guiones y puntos' });
+
+    await client.query('BEGIN');
+
+    // Insertar con orden temporal al final
+    const maxRes = await client.query(
       `SELECT COALESCE(MAX(orden_alfabetico), 0) + 1 AS next
        FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL`,
       [grupo_id]
     );
-    const result = await pool.query(
+    const insertRes = await client.query(
       `INSERT INTO estudiantes (grupo_id, nombre, orden_alfabetico)
        VALUES ($1, $2, $3) RETURNING *`,
       [grupo_id, nombre.trim(), maxRes.rows[0].next]
     );
-    res.status(201).json(result.rows[0]);
+
+    // Reordenar todo el grupo alfabéticamente
+    await client.query(
+      `WITH ranked AS (
+         SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
+         FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL
+       )
+       UPDATE estudiantes e SET orden_alfabetico = ranked.rn
+       FROM ranked WHERE e.id = ranked.id`,
+      [grupo_id]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json(insertRes.rows[0]);
   } catch (err) {
+    await client.query('ROLLBACK');
     if (err.code === '23505') return res.status(409).json({ error: 'Ya existe un estudiante con ese nombre en el grupo' });
     next(err);
+  } finally {
+    client.release();
   }
 });
 

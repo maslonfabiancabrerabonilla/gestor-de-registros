@@ -304,7 +304,7 @@ export default function TablaRegistros({
                     >
                       <div className="flex flex-col items-center gap-1">
 
-                        {/* Selector de asistencia — solo turnos tipo clase; pruebas van directo a calificación */}
+                        {/* Selector de asistencia: clases → A/F | pruebas → NP */}
                         {!esPrueba ? (
                           <select
                             value={asist}
@@ -314,9 +314,17 @@ export default function TablaRegistros({
                             <option value="">—</option>
                             <option value="A">A</option>
                             <option value="F">F</option>
+                          </select>
+                        ) : (
+                          <select
+                            value={asist}
+                            onChange={e => setCelda(t.id, est.id, 'asistencia', e.target.value || null)}
+                            className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          >
+                            <option value="">—</option>
                             <option value="NP">NP</option>
                           </select>
-                        ) : null}
+                        )}
 
                         {/* Input de calificación */}
                         <input
