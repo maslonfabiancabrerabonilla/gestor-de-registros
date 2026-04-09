@@ -31,6 +31,11 @@ router.post('/batch-save', async (req, res, next) => {
             error: `Calificación debe ser un entero entre 2 y 5 para estudiante_id ${reg.estudiante_id}`
           });
         }
+        if (reg.asistencia === 'F' || reg.asistencia === 'NP') {
+          return res.status(400).json({
+            error: `No se puede asignar calificación a un estudiante ausente (estudiante_id ${reg.estudiante_id})`
+          });
+        }
       }
       if (reg.asistencia != null && !ASISTENCIA_VALIDA.includes(reg.asistencia)) {
         return res.status(400).json({

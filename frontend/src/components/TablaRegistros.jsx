@@ -339,7 +339,11 @@ export default function TablaRegistros({
                         {!esPrueba ? (
                           <select
                             value={asist}
-                            onChange={e => setCelda(t.id, est.id, 'asistencia', e.target.value || null)}
+                            onChange={e => {
+                              const v = e.target.value || null;
+                              setCelda(t.id, est.id, 'asistencia', v);
+                              if (v === 'F') setCelda(t.id, est.id, 'calificacion', null);
+                            }}
                             className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
                           >
                             <option value="">—</option>
@@ -349,7 +353,11 @@ export default function TablaRegistros({
                         ) : (
                           <select
                             value={asist}
-                            onChange={e => setCelda(t.id, est.id, 'asistencia', e.target.value || null)}
+                            onChange={e => {
+                              const v = e.target.value || null;
+                              setCelda(t.id, est.id, 'asistencia', v);
+                              if (v === 'NP') setCelda(t.id, est.id, 'calificacion', null);
+                            }}
                             className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
                           >
                             <option value="">—</option>
@@ -357,18 +365,19 @@ export default function TablaRegistros({
                           </select>
                         )}
 
-                        {/* Input de calificación */}
+                        {/* Input de calificación (deshabilitado si faltó) */}
                         <input
                           type="number"
                           min="2" max="5" step="1"
-                          value={calif}
+                          value={asist === 'F' || asist === 'NP' ? '' : calif}
+                          disabled={asist === 'F' || asist === 'NP'}
                           onChange={e => {
                             const v = e.target.value;
                             setCelda(t.id, est.id, 'calificacion',
                               v === '' ? null : parseInt(v, 10));
                           }}
-                          placeholder="—"
-                          className="text-xs border border-slate-200 rounded px-1 py-0.5 w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          placeholder={asist === 'F' || asist === 'NP' ? '✕' : '—'}
+                          className={`text-xs border border-slate-200 rounded px-1 py-0.5 w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400 ${asist === 'F' || asist === 'NP' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     </td>
