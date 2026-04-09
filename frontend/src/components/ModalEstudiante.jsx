@@ -1,6 +1,8 @@
 import { useState } from 'react';
 
 // Modal para agregar un solo estudiante o importar Excel masivo
+const NOMBRE_REGEX = /^[\p{L}\s\-.]+$/u;
+
 export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createEstudiante, bulkImportEstudiantes }) {
   const [modo,        setModo]        = useState('manual'); // 'manual' | 'excel'
   const [nombre,      setNombre]      = useState('');
@@ -8,8 +10,6 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
   const [cargando,    setCargando]    = useState(false);
   const [error,       setError]       = useState('');
   const [resultado,   setResultado]   = useState(null); // para mostrar resumen de importación
-
-  const NOMBRE_REGEX = /^[\p{L}\s\-.]+$/u;
 
   const guardarManual = async (e) => {
     e.preventDefault();

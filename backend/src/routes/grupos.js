@@ -47,6 +47,7 @@ router.post('/', async (req, res, next) => {
 
 // PUT /api/grupos/:id — actualizar grupo
 router.put('/:id', async (req, res, next) => {
+  const client = await pool.connect();
   try {
     const { nombre, asignatura, semestre, total_clases_planificadas } = req.body;
 
@@ -67,20 +68,36 @@ router.put('/:id', async (req, res, next) => {
 
     if (!campos.length) return res.status(400).json({ error: 'No hay campos para actualizar' });
 
+    await client.query('BEGIN');
+
     valores.push(req.params.id);
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE grupos SET ${campos.join(', ')} WHERE id = $${idx} RETURNING *`,
       valores
     );
-    if (!result.rows.length) return res.status(404).json({ error: 'Grupo no encontrado' });
+    if (!result.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Grupo no encontrado' });
+    }
+
+    await client.query(
+      `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
+       VALUES (1, $1, 'editar_grupo', $2)`,
+      [req.params.id, JSON.stringify(req.body)]
+    );
+
+    await client.query('COMMIT');
     res.json(result.rows[0]);
   } catch (err) {
+    await client.query('ROLLBACK');
     if (err.code === '23505') return res.status(409).json({ error: 'Ya existe un grupo con ese nombre' });
     next(err);
-  }
+  } finally { client.release(); }
 });
 
 // DELETE /api/grupos/:id — eliminar grupo (hard delete, cascada a tablas hijas)
+// Nota: no se registra audit_log porque audit_log.grupo_id tiene ON DELETE CASCADE,
+// por lo que cualquier entrada se eliminaría junto con el grupo.
 router.delete('/:id', async (req, res, next) => {
   try {
     const result = await pool.query('DELETE FROM grupos WHERE id = $1 RETURNING id', [req.params.id]);

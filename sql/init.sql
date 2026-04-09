@@ -132,6 +132,7 @@ ON CONFLICT DO NOTHING;
 -- Calcula asistencia, promedio y corte M/R/B en tiempo real.
 -- Reglas confirmadas:
 --   * Solo turnos tipo C/CP/PL cuentan para % asistencia
+--   * Denominador: total_clases_planificadas (si definido), sino clases dadas
 --   * Corte B: promedio >= 4.0 AND asistencia >= 80%
 --   * Corte R: promedio >= 3.0 AND asistencia >= 70%
 --   * Corte M: cualquier otro caso
@@ -148,14 +149,21 @@ SELECT
   e.grupo_id,
   e.nombre,
   COALESCE(c.total_clases, 0)                                    AS total_clases,
+  g.total_clases_planificadas,
+  COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0)) AS denominador,
   COUNT(CASE WHEN r.asistencia = 'A'
               AND t.tipo IN ('C', 'CP', 'PL')
               AND t.deleted_at IS NULL THEN 1 END)::int           AS asistencias,
   ROUND(
-    100.0 * COUNT(CASE WHEN r.asistencia = 'A'
-                        AND t.tipo IN ('C', 'CP', 'PL')
-                        AND t.deleted_at IS NULL THEN 1 END)
-    / NULLIF(COALESCE(c.total_clases, 0), 0),
+    CASE WHEN COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0)) > 0
+      THEN 100.0 * (
+        COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0))
+        - (COALESCE(c.total_clases, 0) - COUNT(CASE WHEN r.asistencia = 'A'
+                                                      AND t.tipo IN ('C', 'CP', 'PL')
+                                                      AND t.deleted_at IS NULL THEN 1 END)::int)
+      ) / COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0))
+      ELSE 100.0
+    END,
     1
   )                                                               AS porcentaje_asistencia,
   ROUND(
@@ -171,23 +179,35 @@ SELECT
       THEN NULL
     WHEN AVG(CASE WHEN r.calificacion IS NOT NULL
                    AND t.deleted_at IS NULL THEN r.calificacion END) >= 4.0
-         AND COUNT(CASE WHEN r.asistencia = 'A'
-                         AND t.tipo IN ('C', 'CP', 'PL')
-                         AND t.deleted_at IS NULL THEN 1 END)::numeric
-             / NULLIF(COALESCE(c.total_clases, 0), 0) >= 0.80
+         AND CASE WHEN COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0)) > 0
+               THEN (
+                 COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0))
+                 - (COALESCE(c.total_clases, 0) - COUNT(CASE WHEN r.asistencia = 'A'
+                                                              AND t.tipo IN ('C', 'CP', 'PL')
+                                                              AND t.deleted_at IS NULL THEN 1 END)::int)
+               )::numeric / COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0))
+               ELSE 1.0
+             END >= 0.80
       THEN 'B'
     WHEN AVG(CASE WHEN r.calificacion IS NOT NULL
                    AND t.deleted_at IS NULL THEN r.calificacion END) >= 3.0
-         AND COUNT(CASE WHEN r.asistencia = 'A'
-                         AND t.tipo IN ('C', 'CP', 'PL')
-                         AND t.deleted_at IS NULL THEN 1 END)::numeric
-             / NULLIF(COALESCE(c.total_clases, 0), 0) >= 0.70
+         AND CASE WHEN COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0)) > 0
+               THEN (
+                 COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0))
+                 - (COALESCE(c.total_clases, 0) - COUNT(CASE WHEN r.asistencia = 'A'
+                                                              AND t.tipo IN ('C', 'CP', 'PL')
+                                                              AND t.deleted_at IS NULL THEN 1 END)::int)
+               )::numeric / COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0))
+               ELSE 1.0
+             END >= 0.70
       THEN 'R'
     ELSE 'M'
-  END                                                             AS corte
+  END                                                             AS corte,
+  g.total_clases_planificadas IS NULL                             AS provisional
 FROM  estudiantes e
-LEFT JOIN clases_por_grupo c  ON c.grupo_id = e.grupo_id
-LEFT JOIN registros r         ON r.estudiante_id = e.id
-LEFT JOIN turnos t            ON r.turno_id = t.id
+JOIN  grupos g                    ON g.id = e.grupo_id
+LEFT JOIN clases_por_grupo c      ON c.grupo_id = e.grupo_id
+LEFT JOIN registros r             ON r.estudiante_id = e.id
+LEFT JOIN turnos t                ON r.turno_id = t.id
 WHERE e.deleted_at IS NULL
-GROUP BY e.id, e.grupo_id, e.nombre, c.total_clases;
+GROUP BY e.id, e.grupo_id, e.nombre, c.total_clases, g.total_clases_planificadas;

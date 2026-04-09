@@ -1,6 +1,6 @@
 // Grilla principal: estudiantes (filas) × turnos (columnas)
 // Celdas editables con cambios pendientes y guardado por turno
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // ── Constantes de estilo ──────────────────────────────────────
 const TIPO_COLOR = {
@@ -91,6 +91,24 @@ export default function TablaRegistros({
   // errorGuardado[turno_id] = mensaje
   const [errGuardar, setErrGuardar] = useState({});
 
+  // Limpiar cambios huérfanos cuando un estudiante es eliminado
+  useEffect(() => {
+    const ids = new Set(estudiantes.map(e => e.id));
+    setCambios(prev => {
+      let changed = false;
+      const next = {};
+      for (const [tid, ests] of Object.entries(prev)) {
+        const filtered = {};
+        for (const [eid, val] of Object.entries(ests)) {
+          if (ids.has(Number(eid))) filtered[eid] = val;
+          else changed = true;
+        }
+        if (Object.keys(filtered).length) next[tid] = filtered;
+      }
+      return changed ? next : prev;
+    });
+  }, [estudiantes]);
+
   // ── Helpers de edición ────────────────────────────────────
   const setCelda = useCallback((turnoId, estId, campo, valor) => {
     setCambios(prev => ({
@@ -174,7 +192,7 @@ export default function TablaRegistros({
         <thead>
           {/* Fila 1: info de turno */}
           <tr className="bg-slate-50">
-            <th className="sticky left-0 z-10 bg-slate-50 border-b border-r border-slate-200 px-4 py-3 text-left font-semibold text-slate-700 min-w-[200px]">
+            <th className="sticky left-0 z-10 bg-slate-50 border-b border-r border-slate-200 px-4 py-3 text-left font-semibold text-slate-700 min-w-[150px]">
               Estudiante
             </th>
 
@@ -278,14 +296,14 @@ export default function TablaRegistros({
 
                 {/* Nombre */}
                 <td className={`sticky left-0 z-10 border-b border-r border-slate-200 px-4 py-2 font-medium text-slate-800 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 w-[180px]">
                     {stats.alerta && (
                       <span title={`Inasistencias: ${(100 - stats.pct).toFixed(1)}%`} className="cursor-help">⚠️</span>
                     )}
                     {stats.esProvisional && stats.clasesDadas > 0 && (
                       <span title="Sin total planificado: % provisional basado en clases dadas" className="text-[10px] text-slate-400 font-normal">(prov.)</span>
                     )}
-                    <span className="truncate max-w-[130px]" title={est.nombre}>{est.nombre}</span>
+                    <span className="break-words min-w-0 flex-1" title={est.nombre}>{est.nombre}</span>
                     <button
                       onClick={() => onEditarEstudiante?.(est)}
                       title="Editar estudiante"

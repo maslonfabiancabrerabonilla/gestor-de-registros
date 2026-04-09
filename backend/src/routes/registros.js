@@ -22,15 +22,6 @@ router.post('/batch-save', async (req, res, next) => {
     if (!Array.isArray(registros) || !registros.length)
       return res.status(400).json({ error: 'registros debe ser un array no vacío' });
 
-    // Verificar turno
-    const turnoRes = await pool.query(
-      'SELECT * FROM turnos WHERE id = $1 AND deleted_at IS NULL',
-      [turno_id]
-    );
-    if (!turnoRes.rows.length) return res.status(404).json({ error: 'Turno no encontrado' });
-    const turno = turnoRes.rows[0];
-    const esPrueba = TIPOS_PRUEBA.includes(turno.tipo);
-
     // Validar rangos antes de abrir la transacción
     for (const reg of registros) {
       if (reg.calificacion !== null && reg.calificacion !== undefined) {
@@ -43,6 +34,18 @@ router.post('/batch-save', async (req, res, next) => {
     }
 
     await client.query('BEGIN');
+
+    // Verificar turno (dentro de la transacción para evitar race conditions)
+    const turnoRes = await client.query(
+      'SELECT * FROM turnos WHERE id = $1 AND deleted_at IS NULL',
+      [turno_id]
+    );
+    if (!turnoRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Turno no encontrado' });
+    }
+    const turno = turnoRes.rows[0];
+    const esPrueba = TIPOS_PRUEBA.includes(turno.tipo);
 
     let guardados = 0;
     for (const reg of registros) {

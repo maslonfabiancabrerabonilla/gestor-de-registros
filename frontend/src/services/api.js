@@ -25,6 +25,8 @@ export const deleteGrupo     = (id)       => fetch(`/api/grupos/${id}`, { method
 export const getEstudiantes  = (gid, soloActivos = true) =>
   fetch(`/api/grupos/${gid}/estudiantes?solo_activos=${soloActivos}`).then(handleResponse);
 
+// TODO(futuro): estadísticas individuales por estudiante. Actualmente el cálculo
+// se realiza en el cliente (calcStats en TablaRegistros). Endpoint listo para uso futuro.
 export const getEstadisticas = (gid, eid) =>
   fetch(`/api/grupos/${gid}/estudiantes/${eid}/estadisticas`).then(handleResponse);
 
@@ -80,5 +82,6 @@ export const exportarMatriz = (gid) =>
     return res.blob();
   });
 
+// TODO(futuro): panel de administración con historial de auditoría.
 export const getAuditoria = (gid) =>
   fetch(`/api/grupos/${gid}/auditoria`).then(handleResponse);

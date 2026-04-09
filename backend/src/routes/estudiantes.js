@@ -99,6 +99,8 @@ router.get('/:grupo_id/estudiantes', async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────
 // GET /api/grupos/:grupo_id/estudiantes/:id/estadisticas
 // DEBE ir antes de /:id para evitar que Express lo capture
+// TODO(futuro): endpoint listo para vista individual de estadísticas.
+// Actualmente el frontend calcula stats en el cliente (calcStats).
 // ─────────────────────────────────────────────────────────────
 router.get('/:grupo_id/estudiantes/:id/estadisticas', async (req, res, next) => {
   try {
