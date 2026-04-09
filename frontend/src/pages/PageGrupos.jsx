@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate }         from 'react-router-dom';
 import { getGrupos, deleteGrupo } from '../services/api.js';
 import ModalCrearGrupo         from '../components/ModalCrearGrupo.jsx';
+import ModalEditarGrupo        from '../components/ModalEditarGrupo.jsx';
 import ModalConfirmar          from '../components/ModalConfirmar.jsx';
 
 export default function PageGrupos() {
@@ -11,6 +12,7 @@ export default function PageGrupos() {
   const [cargando,      setCargando]      = useState(true);
   const [error,         setError]         = useState('');
   const [modalAbierto,    setModalAbierto]    = useState(false);
+  const [grupoEditar,      setGrupoEditar]      = useState(null);
   const [grupoEliminar,   setGrupoEliminar]   = useState(null);
   const [eliminando,      setEliminando]      = useState(false);
   const [errModal,        setErrModal]        = useState('');
@@ -30,6 +32,11 @@ export default function PageGrupos() {
   const handleCreado = (nuevoGrupo) => {
     setGrupos(prev => [...prev, nuevoGrupo]);
     setModalAbierto(false);
+  };
+
+  const handleEditado = (grupoActualizado) => {
+    setGrupos(prev => prev.map(g => g.id === grupoActualizado.id ? grupoActualizado : g));
+    setGrupoEditar(null);
   };
 
   const confirmarEliminar = (grupo) => { setErrModal(''); setGrupoEliminar(grupo); };
@@ -120,6 +127,12 @@ export default function PageGrupos() {
                     Abrir →
                   </button>
                   <button
+                    onClick={() => setGrupoEditar(grupo)}
+                    className="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg transition"
+                  >
+                    Editar
+                  </button>
+                  <button
                     onClick={() => confirmarEliminar(grupo)}
                     className="px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg transition"
                   >
@@ -137,6 +150,15 @@ export default function PageGrupos() {
         <ModalCrearGrupo
           onCerrar={() => setModalAbierto(false)}
           onCreado={handleCreado}
+        />
+      )}
+
+      {/* Modal editar grupo */}
+      {grupoEditar && (
+        <ModalEditarGrupo
+          grupo={grupoEditar}
+          onCerrar={() => setGrupoEditar(null)}
+          onGuardado={handleEditado}
         />
       )}
 
