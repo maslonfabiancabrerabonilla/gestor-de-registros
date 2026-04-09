@@ -297,12 +297,9 @@ export default function TablaRegistros({
 
                 {/* Nombre */}
                 <td className={`sticky left-0 z-10 border-b border-r border-slate-200 px-4 py-2 font-medium text-slate-800 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
-                  <div className="flex items-center gap-1.5 w-[180px]">
+                  <div className="flex items-center gap-1.5 w-[200px]">
                     {stats.alerta && (
                       <span title={`Inasistencias: ${(100 - stats.pct).toFixed(1)}%`} className="cursor-help">⚠️</span>
-                    )}
-                    {stats.esProvisional && stats.clasesDadas > 0 && (
-                      <span title="Sin total planificado: % provisional basado en clases dadas" className="text-[10px] text-slate-400 font-normal">(prov.)</span>
                     )}
                     <span className="break-words min-w-0 flex-1" title={est.nombre}>{est.nombre}</span>
                     <button
