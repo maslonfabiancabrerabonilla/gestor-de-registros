@@ -36,6 +36,11 @@ router.post('/batch-save', async (req, res, next) => {
             error: `No se puede asignar calificación a un estudiante ausente (estudiante_id ${reg.estudiante_id})`
           });
         }
+        if (reg.asistencia == null) {
+          return res.status(400).json({
+            error: `Debe registrar asistencia antes de asignar calificación (estudiante_id ${reg.estudiante_id})`
+          });
+        }
       }
       if (reg.asistencia != null && !ASISTENCIA_VALIDA.includes(reg.asistencia)) {
         return res.status(400).json({

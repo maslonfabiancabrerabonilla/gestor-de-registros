@@ -35,10 +35,21 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
 
     await client.query('BEGIN');
 
-    // Auto-incrementar numero_turno dentro del grupo
+    // Verificar que no exista otro turno activo con la misma fecha en el grupo
+    const fechaDup = await client.query(
+      `SELECT id FROM turnos
+       WHERE grupo_id = $1 AND fecha = $2 AND deleted_at IS NULL`,
+      [grupo_id, fecha]
+    );
+    if (fechaDup.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: `Ya existe un turno con fecha ${fecha} en este grupo` });
+    }
+
+    // Auto-incrementar numero_turno dentro del grupo (solo activos)
     const maxRes = await client.query(
-      `SELECT COALESCE(MAX(numero_turno), 0) + 1 AS next
-       FROM turnos WHERE grupo_id = $1`,
+      `SELECT COUNT(*)::int + 1 AS next
+       FROM turnos WHERE grupo_id = $1 AND deleted_at IS NULL`,
       [grupo_id]
     );
     const numero_turno = maxRes.rows[0].next;
@@ -87,6 +98,19 @@ router.put('/:grupo_id/turnos/:id', async (req, res, next) => {
     valores.push(id, grupo_id);
     await client.query('BEGIN');
 
+    // Si se cambia la fecha, verificar que no colisione con otro turno
+    if (fecha !== undefined) {
+      const fechaDup = await client.query(
+        `SELECT id FROM turnos
+         WHERE grupo_id = $1 AND fecha = $2 AND deleted_at IS NULL AND id != $3`,
+        [grupo_id, fecha, id]
+      );
+      if (fechaDup.rows.length) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: `Ya existe un turno con fecha ${fecha} en este grupo` });
+      }
+    }
+
     const result = await client.query(
       `UPDATE turnos SET ${campos.join(', ')}
        WHERE id = $${idx++} AND grupo_id = $${idx++} AND deleted_at IS NULL
@@ -134,6 +158,18 @@ router.delete('/:grupo_id/turnos/:id', async (req, res, next) => {
       `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
        VALUES (1, $1, 'soft_delete_turno', $2)`,
       [grupo_id, JSON.stringify({ turno_id: id })]
+    );
+
+    // Renumerar turnos activos secuencialmente
+    await client.query(
+      `WITH ranked AS (
+         SELECT id, ROW_NUMBER() OVER (ORDER BY fecha ASC, id ASC) AS rn
+         FROM turnos
+         WHERE grupo_id = $1 AND deleted_at IS NULL
+       )
+       UPDATE turnos t SET numero_turno = ranked.rn
+       FROM ranked WHERE t.id = ranked.id`,
+      [grupo_id]
     );
 
     await client.query('COMMIT');

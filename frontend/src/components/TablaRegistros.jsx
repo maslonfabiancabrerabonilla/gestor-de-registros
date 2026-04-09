@@ -342,7 +342,7 @@ export default function TablaRegistros({
                             onChange={e => {
                               const v = e.target.value || null;
                               setCelda(t.id, est.id, 'asistencia', v);
-                              if (v === 'F') setCelda(t.id, est.id, 'calificacion', null);
+                              if (v !== 'A') setCelda(t.id, est.id, 'calificacion', null);
                             }}
                             className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
                           >
@@ -356,7 +356,7 @@ export default function TablaRegistros({
                             onChange={e => {
                               const v = e.target.value || null;
                               setCelda(t.id, est.id, 'asistencia', v);
-                              if (v === 'NP') setCelda(t.id, est.id, 'calificacion', null);
+                              if (v !== 'A') setCelda(t.id, est.id, 'calificacion', null);
                             }}
                             className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
                           >
@@ -365,19 +365,19 @@ export default function TablaRegistros({
                           </select>
                         )}
 
-                        {/* Input de calificación (deshabilitado si faltó) */}
+                        {/* Input de calificación (solo habilitado si asistió) */}
                         <input
                           type="number"
                           min="2" max="5" step="1"
-                          value={asist === 'F' || asist === 'NP' ? '' : calif}
-                          disabled={asist === 'F' || asist === 'NP'}
+                          value={asist === 'A' ? calif : ''}
+                          disabled={asist !== 'A'}
                           onChange={e => {
                             const v = e.target.value;
                             setCelda(t.id, est.id, 'calificacion',
                               v === '' ? null : parseInt(v, 10));
                           }}
-                          placeholder={asist === 'F' || asist === 'NP' ? '✕' : '—'}
-                          className={`text-xs border border-slate-200 rounded px-1 py-0.5 w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400 ${asist === 'F' || asist === 'NP' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : ''}`}
+                          placeholder={asist !== 'A' ? '✕' : '—'}
+                          className={`text-xs border border-slate-200 rounded px-1 py-0.5 w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400 ${asist !== 'A' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     </td>
