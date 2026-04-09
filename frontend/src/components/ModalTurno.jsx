@@ -10,13 +10,11 @@ const TIPOS = [
   { value: 'EM', label: 'EM — Examen',            grupo: 'prueba' },
 ];
 
-const getHoy = () => new Date().toISOString().slice(0, 10);
-
 export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, createTurno, updateTurno }) {
   const editando = Boolean(turno);
 
   const [tipo,     setTipo]     = useState(turno?.tipo         ?? 'C');
-  const [fecha,    setFecha]    = useState(turno?.fecha ? turno.fecha.slice(0, 10) : getHoy());
+  const [fecha,    setFecha]    = useState(turno?.fecha ? turno.fecha.slice(0, 10) : '');
   const [descripcion, setDescripcion] = useState(turno?.descripcion  ?? '');
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState('');
@@ -24,7 +22,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
   useEffect(() => {
     if (turno) {
       setTipo(turno.tipo);
-      setFecha(turno.fecha ? turno.fecha.slice(0, 10) : getHoy());
+      setFecha(turno.fecha ? turno.fecha.slice(0, 10) : '');
       setDescripcion(turno.descripcion ?? '');
     }
   }, [turno]);
@@ -34,7 +32,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
     setError('');
     setCargando(true);
     try {
-      const payload = { tipo, fecha, descripcion: descripcion.trim() || null };
+      const payload = { tipo, fecha: fecha || null, descripcion: descripcion.trim() || null };
       if (editando) {
         await updateTurno(grupoId, turno.id, payload);
       } else {
@@ -98,14 +96,14 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
 
           {/* Fecha */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1.5">Fecha *</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">Fecha <span className="text-slate-400">(opcional)</span></label>
             <input
               type="date"
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              required
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
+            {!fecha && <p className="text-xs text-amber-500 mt-1">Sin fecha — no se podrán registrar asistencias hasta definirla</p>}
           </div>
 
           {/* Tema */}
@@ -138,7 +136,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
             </button>
             <button
               type="submit"
-              disabled={cargando || !fecha}
+              disabled={cargando}
               className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
             >
               {cargando ? 'Guardando…' : editando ? 'Actualizar' : 'Crear Turno'}

@@ -13,7 +13,7 @@ router.get('/:grupo_id/turnos', async (req, res, next) => {
     const result = await pool.query(
       `SELECT * FROM turnos
        WHERE grupo_id = $1 AND deleted_at IS NULL
-       ORDER BY fecha ASC, numero_turno ASC`,
+       ORDER BY fecha ASC NULLS LAST, numero_turno ASC`,
       [req.params.grupo_id]
     );
     res.json(result.rows);
@@ -27,7 +27,6 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
     const { grupo_id } = req.params;
     const { fecha, tipo, descripcion } = req.body;
 
-    if (!fecha) return res.status(400).json({ error: 'fecha es obligatoria (YYYY-MM-DD)' });
     if (!tipo)  return res.status(400).json({ error: 'tipo es obligatorio' });
     if (!TIPOS_VALIDOS.includes(tipo)) {
       return res.status(400).json({ error: `tipo inválido. Opciones: ${TIPOS_VALIDOS.join(', ')}` });
@@ -35,15 +34,36 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
 
     await client.query('BEGIN');
 
-    // Verificar que no exista otro turno activo con la misma fecha en el grupo
-    const fechaDup = await client.query(
-      `SELECT id FROM turnos
-       WHERE grupo_id = $1 AND fecha = $2 AND deleted_at IS NULL`,
-      [grupo_id, fecha]
+    // Verificar límite de turnos si el grupo tiene total_clases_planificadas
+    const grupoRes = await client.query(
+      'SELECT total_clases_planificadas FROM grupos WHERE id = $1',
+      [grupo_id]
     );
-    if (fechaDup.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error: `Ya existe un turno con fecha ${fecha} en este grupo` });
+    if (grupoRes.rows.length) {
+      const tcp = grupoRes.rows[0].total_clases_planificadas;
+      if (tcp !== null) {
+        const countRes = await client.query(
+          'SELECT COUNT(*)::int AS total FROM turnos WHERE grupo_id = $1 AND deleted_at IS NULL',
+          [grupo_id]
+        );
+        if (countRes.rows[0].total >= tcp) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: `Ya se alcanzó el límite de ${tcp} turnos planificados` });
+        }
+      }
+    }
+
+    // Verificar fecha duplicada (solo si se proporcionó fecha)
+    if (fecha) {
+      const fechaDup = await client.query(
+        `SELECT id FROM turnos
+         WHERE grupo_id = $1 AND fecha = $2 AND deleted_at IS NULL`,
+        [grupo_id, fecha]
+      );
+      if (fechaDup.rows.length) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: `Ya existe un turno con fecha ${fecha} en este grupo` });
+      }
     }
 
     // Auto-incrementar numero_turno dentro del grupo (solo activos)
@@ -57,7 +77,7 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
     const result = await client.query(
       `INSERT INTO turnos (grupo_id, numero_turno, fecha, tipo, descripcion)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [grupo_id, numero_turno, fecha, tipo, descripcion?.trim() || null]
+      [grupo_id, numero_turno, fecha || null, tipo, descripcion?.trim() || null]
     );
     const turno = result.rows[0];
 
@@ -89,7 +109,7 @@ router.put('/:grupo_id/turnos/:id', async (req, res, next) => {
     const campos = [];
     const valores = [];
     let idx = 1;
-    if (fecha       !== undefined) { campos.push(`fecha = $${idx++}`);              valores.push(fecha); }
+    if (fecha       !== undefined) { campos.push(`fecha = $${idx++}`);              valores.push(fecha || null); }
     if (tipo        !== undefined) { campos.push(`tipo = $${idx++}::tipo_turno`);   valores.push(tipo); }
     if (descripcion !== undefined) { campos.push(`descripcion = $${idx++}`);        valores.push(descripcion?.trim() || null); }
 
@@ -99,7 +119,7 @@ router.put('/:grupo_id/turnos/:id', async (req, res, next) => {
     await client.query('BEGIN');
 
     // Si se cambia la fecha, verificar que no colisione con otro turno
-    if (fecha !== undefined) {
+    if (fecha !== undefined && fecha !== null) {
       const fechaDup = await client.query(
         `SELECT id FROM turnos
          WHERE grupo_id = $1 AND fecha = $2 AND deleted_at IS NULL AND id != $3`,
@@ -163,7 +183,7 @@ router.delete('/:grupo_id/turnos/:id', async (req, res, next) => {
     // Renumerar turnos activos secuencialmente
     await client.query(
       `WITH ranked AS (
-         SELECT id, ROW_NUMBER() OVER (ORDER BY fecha ASC, id ASC) AS rn
+         SELECT id, ROW_NUMBER() OVER (ORDER BY fecha ASC NULLS LAST, id ASC) AS rn
          FROM turnos
          WHERE grupo_id = $1 AND deleted_at IS NULL
        )

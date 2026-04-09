@@ -154,10 +154,12 @@ export default function PageRegistros() {
             onClick={() => setModalEstudiante(true)}
             className="px-3 py-2 text-sm bg-white border border-slate-200 text-slate-700 rounded-lg hover:border-blue-300 hover:text-blue-700 transition"
           >+ Agregar Estudiantes</button>
-          <button
-            onClick={abrirNuevoTurno}
-            className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >+ Nuevo Turno</button>
+          {(!grupo?.total_clases_planificadas || turnos.length < grupo.total_clases_planificadas) && (
+            <button
+              onClick={abrirNuevoTurno}
+              className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >+ Nuevo Turno</button>
+          )}
           <div className="relative group">
             <button
               disabled={exportando}

@@ -61,8 +61,7 @@ function calcStats(est, turnos, registrosMap, totalClasesPlanificadas) {
 }
 
 function formatFecha(str) {
-  if (!str) return '';
-  // La fecha viene como "2026-04-01T00:00:00.000Z", tomamos solo la parte de fecha
+  if (!str) return 'Sin fecha';
   const d = new Date(str);
   return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', timeZone: 'UTC' });
 }
@@ -210,7 +209,7 @@ export default function TablaRegistros({
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TIPO_COLOR[t.tipo] ?? 'bg-slate-100'}`}>
                     T{t.numero_turno} {t.tipo}
                   </span>
-                  <span className="text-xs text-slate-400">{formatFecha(t.fecha)}</span>
+                  <span className={`text-xs ${t.fecha ? 'text-slate-400' : 'text-amber-500 font-medium'}`}>{formatFecha(t.fecha)}</span>
                   {t.descripcion && (
                     <span className="text-[10px] text-slate-400 truncate max-w-[100px]" title={t.descripcion}>
                       {t.descripcion}
@@ -323,13 +322,18 @@ export default function TablaRegistros({
                   const calif = Object.hasOwn(delta, 'calificacion') ? (delta.calificacion ?? '') : (base.calificacion ?? '');
                   const editado = Boolean(cambios[t.id]?.[est.id]);
                   const esPrueba = !TIPOS_CLASE.includes(t.tipo);
+                  const sinFecha = !t.fecha;
 
                   return (
                     <td key={t.id}
                       className={`border-b border-r border-slate-200 px-2 py-1.5 text-center align-middle
+                        ${sinFecha ? 'bg-slate-50' : ''}
                         ${editado ? 'ring-2 ring-inset ring-amber-300' : ''}
-                        ${asist ? (ASIST_BG[asist] ?? '') : ''}`}
+                        ${!sinFecha && asist ? (ASIST_BG[asist] ?? '') : ''}`}
                     >
+                      {sinFecha ? (
+                        <span className="text-[10px] text-slate-300">—</span>
+                      ) : (
                       <div className="flex flex-col items-center gap-1">
 
                         {/* Selector de asistencia: clases → A/F | pruebas → NP */}
@@ -377,6 +381,7 @@ export default function TablaRegistros({
                           className={`text-xs border border-slate-200 rounded px-1 py-0.5 w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400 ${asist !== 'A' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : ''}`}
                         />
                       </div>
+                      )}
                     </td>
                   );
                 })}
