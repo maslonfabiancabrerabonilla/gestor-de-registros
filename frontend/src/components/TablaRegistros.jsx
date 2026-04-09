@@ -360,12 +360,12 @@ export default function TablaRegistros({
                         {/* Input de calificación */}
                         <input
                           type="number"
-                          min="0" max="5" step="0.1"
+                          min="2" max="5" step="1"
                           value={calif}
                           onChange={e => {
                             const v = e.target.value;
                             setCelda(t.id, est.id, 'calificacion',
-                              v === '' ? null : parseFloat(v));
+                              v === '' ? null : parseInt(v, 10));
                           }}
                           placeholder="—"
                           className="text-xs border border-slate-200 rounded px-1 py-0.5 w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400"

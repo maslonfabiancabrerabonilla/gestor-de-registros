@@ -26,9 +26,9 @@ router.post('/batch-save', async (req, res, next) => {
     const ASISTENCIA_VALIDA = ['A', 'F', 'NP'];
     for (const reg of registros) {
       if (reg.calificacion !== null && reg.calificacion !== undefined) {
-        if (reg.calificacion < 0 || reg.calificacion > 5) {
+        if (!Number.isInteger(reg.calificacion) || reg.calificacion < 2 || reg.calificacion > 5) {
           return res.status(400).json({
-            error: `Calificación fuera de rango 0-5 para estudiante_id ${reg.estudiante_id}`
+            error: `Calificación debe ser un entero entre 2 y 5 para estudiante_id ${reg.estudiante_id}`
           });
         }
       }

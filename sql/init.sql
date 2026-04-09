@@ -72,11 +72,11 @@ CREATE TABLE IF NOT EXISTS registros (
   turno_id       INT NOT NULL REFERENCES turnos(id) ON DELETE CASCADE,
   estudiante_id  INT NOT NULL REFERENCES estudiantes(id) ON DELETE CASCADE,
   asistencia     asistencia_tipo,
-  calificacion   NUMERIC(3,1),
+  calificacion   SMALLINT,
   created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(turno_id, estudiante_id),
-  CONSTRAINT cal_rango CHECK (calificacion >= 0 AND calificacion <= 5 OR calificacion IS NULL)
+  CONSTRAINT cal_rango CHECK (calificacion >= 2 AND calificacion <= 5 OR calificacion IS NULL)
 );
 
 CREATE INDEX IF NOT EXISTS idx_registros_estudiante_turno ON registros(estudiante_id, turno_id);
