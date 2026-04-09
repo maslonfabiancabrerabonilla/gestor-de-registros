@@ -134,8 +134,9 @@ export default function TablaRegistros({
       const registros = estudiantes.map(est => {
         const base   = registrosMap[turnoId]?.[est.id] ?? {};
         const delta  = cambios[turnoId]?.[est.id] ?? {};
-        const asist  = delta.asistencia  ?? base.asistencia  ?? null;
-        const calif  = delta.calificacion ?? base.calificacion ?? null;
+        // hasOwn distingue "nunca tocado" de "explícitamente limpiado a null"
+        const asist  = Object.hasOwn(delta, 'asistencia')  ? delta.asistencia  : (base.asistencia  ?? null);
+        const calif  = Object.hasOwn(delta, 'calificacion') ? delta.calificacion : (base.calificacion ?? null);
         return { estudiante_id: est.id, asistencia: asist, calificacion: calif };
       }).filter(r => r.asistencia !== null || r.calificacion !== null);
 
@@ -321,8 +322,8 @@ export default function TablaRegistros({
                 {turnos.map(t => {
                   const base  = registrosMap[t.id]?.[est.id] ?? {};
                   const delta = cambios[t.id]?.[est.id] ?? {};
-                  const asist = delta.asistencia  ?? base.asistencia  ?? '';
-                  const calif = delta.calificacion ?? base.calificacion ?? '';
+                  const asist = Object.hasOwn(delta, 'asistencia')  ? (delta.asistencia  ?? '') : (base.asistencia  ?? '');
+                  const calif = Object.hasOwn(delta, 'calificacion') ? (delta.calificacion ?? '') : (base.calificacion ?? '');
                   const editado = Boolean(cambios[t.id]?.[est.id]);
                   const esPrueba = !TIPOS_CLASE.includes(t.tipo);
 

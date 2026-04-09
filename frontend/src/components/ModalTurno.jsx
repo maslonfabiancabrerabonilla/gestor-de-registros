@@ -10,13 +10,13 @@ const TIPOS = [
   { value: 'EM', label: 'EM — Examen',            grupo: 'prueba' },
 ];
 
-const HOY = new Date().toISOString().slice(0, 10);
+const getHoy = () => new Date().toISOString().slice(0, 10);
 
 export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, createTurno, updateTurno }) {
   const editando = Boolean(turno);
 
   const [tipo,     setTipo]     = useState(turno?.tipo         ?? 'C');
-  const [fecha,    setFecha]    = useState(turno?.fecha ? turno.fecha.slice(0, 10) : HOY);
+  const [fecha,    setFecha]    = useState(turno?.fecha ? turno.fecha.slice(0, 10) : getHoy());
   const [descripcion, setDescripcion] = useState(turno?.descripcion  ?? '');
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState('');
@@ -24,7 +24,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
   useEffect(() => {
     if (turno) {
       setTipo(turno.tipo);
-      setFecha(turno.fecha ? turno.fecha.slice(0, 10) : HOY);
+      setFecha(turno.fecha ? turno.fecha.slice(0, 10) : getHoy());
       setDescripcion(turno.descripcion ?? '');
     }
   }, [turno]);
