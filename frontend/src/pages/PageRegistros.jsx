@@ -224,7 +224,7 @@ export default function PageRegistros() {
       {turnoEliminar && (
         <ModalConfirmar
           titulo="Eliminar Turno"
-          mensaje={`Eliminar el Turno T${turnoEliminar.numero_turno} (${turnoEliminar.tipo})? Se borraran tambien todos sus registros.`}
+          mensaje={`Eliminar el Turno T${turnoEliminar.numero_turno} (${turnoEliminar.tipo})? Se borrarán también todos sus registros.`}
           labelConfirmar="Eliminar Turno"
           cargando={cargandoModal}
           error={errModal}
@@ -256,7 +256,7 @@ export default function PageRegistros() {
       {estudianteEliminar && (
         <ModalConfirmar
           titulo="Eliminar Estudiante"
-          mensaje={`Eliminar a "${estudianteEliminar.nombre}"? Sus registros se conservaran en el historial.`}
+          mensaje={`Eliminar a "${estudianteEliminar.nombre}"? Sus registros se conservarán en el historial.`}
           labelConfirmar="Eliminar Estudiante"
           cargando={cargandoModal}
           error={errModal}

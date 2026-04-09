@@ -17,7 +17,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
 
   const [tipo,     setTipo]     = useState(turno?.tipo         ?? 'C');
   const [fecha,    setFecha]    = useState(turno?.fecha ? turno.fecha.slice(0, 10) : HOY);
-  const [tema,     setTema]     = useState(turno?.descripcion  ?? '');
+  const [descripcion, setDescripcion] = useState(turno?.descripcion  ?? '');
   const [cargando, setCargando] = useState(false);
   const [error,    setError]    = useState('');
 
@@ -25,7 +25,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
     if (turno) {
       setTipo(turno.tipo);
       setFecha(turno.fecha ? turno.fecha.slice(0, 10) : HOY);
-      setTema(turno.descripcion ?? '');
+      setDescripcion(turno.descripcion ?? '');
     }
   }, [turno]);
 
@@ -34,7 +34,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
     setError('');
     setCargando(true);
     try {
-      const payload = { tipo, fecha, descripcion: tema.trim() || null };
+      const payload = { tipo, fecha, descripcion: descripcion.trim() || null };
       if (editando) {
         await updateTurno(grupoId, turno.id, payload);
       } else {
@@ -115,8 +115,8 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
             </label>
             <input
               type="text"
-              value={tema}
-              onChange={e => setTema(e.target.value)}
+              value={descripcion}
+              onChange={e => setDescripcion(e.target.value)}
               placeholder="Ej: Introducción a álgebra lineal"
               maxLength={200}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"

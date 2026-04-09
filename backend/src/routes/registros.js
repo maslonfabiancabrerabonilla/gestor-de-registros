@@ -22,7 +22,8 @@ router.post('/batch-save', async (req, res, next) => {
     if (!Array.isArray(registros) || !registros.length)
       return res.status(400).json({ error: 'registros debe ser un array no vacío' });
 
-    // Validar rangos antes de abrir la transacción
+    // Validar rangos y valores antes de abrir la transacción
+    const ASISTENCIA_VALIDA = ['A', 'F', 'NP'];
     for (const reg of registros) {
       if (reg.calificacion !== null && reg.calificacion !== undefined) {
         if (reg.calificacion < 0 || reg.calificacion > 5) {
@@ -30,6 +31,11 @@ router.post('/batch-save', async (req, res, next) => {
             error: `Calificación fuera de rango 0-5 para estudiante_id ${reg.estudiante_id}`
           });
         }
+      }
+      if (reg.asistencia != null && !ASISTENCIA_VALIDA.includes(reg.asistencia)) {
+        return res.status(400).json({
+          error: `Valor de asistencia inválido "${reg.asistencia}" para estudiante_id ${reg.estudiante_id}`
+        });
       }
     }
 
@@ -46,6 +52,18 @@ router.post('/batch-save', async (req, res, next) => {
     }
     const turno = turnoRes.rows[0];
     const esPrueba = TIPOS_PRUEBA.includes(turno.tipo);
+
+    // Verificar que todos los estudiante_id pertenecen al grupo del turno
+    const estudianteIds = [...new Set(registros.map(r => r.estudiante_id))];
+    const estCheck = await client.query(
+      `SELECT id FROM estudiantes
+       WHERE id = ANY($1) AND grupo_id = $2 AND deleted_at IS NULL`,
+      [estudianteIds, turno.grupo_id]
+    );
+    if (estCheck.rows.length !== estudianteIds.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Algunos estudiantes no pertenecen a este grupo' });
+    }
 
     let guardados = 0;
     for (const reg of registros) {

@@ -133,6 +133,13 @@ export default function PageGrupos() {
                     Editar
                   </button>
                   <button
+                    onClick={() => navigate(`/grupos/${grupo.id}/admin`)}
+                    className="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg transition"
+                    title="Administración del grupo"
+                  >
+                    ⚙ Admin
+                  </button>
+                  <button
                     onClick={() => confirmarEliminar(grupo)}
                     className="px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg transition"
                   >

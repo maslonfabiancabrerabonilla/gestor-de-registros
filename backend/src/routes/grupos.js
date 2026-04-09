@@ -80,10 +80,17 @@ router.put('/:id', async (req, res, next) => {
       return res.status(404).json({ error: 'Grupo no encontrado' });
     }
 
+    // Registrar solo los campos que realmente se enviaron
+    const cambios = {};
+    if (nombre      !== undefined) cambios.nombre      = nombre.trim();
+    if (asignatura  !== undefined) cambios.asignatura  = asignatura.trim();
+    if (semestre    !== undefined) cambios.semestre    = semestre?.trim() || null;
+    if (total_clases_planificadas !== undefined) cambios.total_clases_planificadas = tcp;
+
     await client.query(
       `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
        VALUES (1, $1, 'editar_grupo', $2)`,
-      [req.params.id, JSON.stringify(req.body)]
+      [req.params.id, JSON.stringify(cambios)]
     );
 
     await client.query('COMMIT');
