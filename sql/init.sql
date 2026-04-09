@@ -60,9 +60,17 @@ CREATE TABLE IF NOT EXISTS turnos (
   deleted_at    TIMESTAMP NULL,
   created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(grupo_id, numero_turno),
   CONSTRAINT numero_positivo CHECK (numero_turno > 0)
 );
+
+-- Unicidad solo entre turnos activos (los soft-deleted no colisionan)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_turnos_grupo_numero_activo
+  ON turnos(grupo_id, numero_turno) WHERE deleted_at IS NULL;
+
+-- Migración: si existe la constraint antigua (incluía soft-deleted), reemplazarla
+DO $$ BEGIN
+  ALTER TABLE turnos DROP CONSTRAINT IF EXISTS turnos_grupo_id_numero_turno_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
 
 CREATE INDEX IF NOT EXISTS idx_turnos_grupo_fecha ON turnos(grupo_id, fecha);
 
@@ -141,7 +149,7 @@ CREATE OR REPLACE VIEW v_estadisticas_estudiantes AS
 WITH clases_por_grupo AS (
   SELECT grupo_id, COUNT(*)::int AS total_clases
   FROM   turnos
-  WHERE  tipo IN ('C', 'CP', 'PL') AND deleted_at IS NULL
+  WHERE  tipo IN ('C', 'CP', 'PL') AND deleted_at IS NULL AND fecha IS NOT NULL
   GROUP BY grupo_id
 ),
 base AS (
@@ -154,7 +162,8 @@ base AS (
     COALESCE(g.total_clases_planificadas, COALESCE(c.total_clases, 0)) AS denominador,
     COUNT(CASE WHEN r.asistencia = 'A'
                 AND t.tipo IN ('C', 'CP', 'PL')
-                AND t.deleted_at IS NULL THEN 1 END)::int             AS asistencias,
+                AND t.deleted_at IS NULL
+                AND t.fecha IS NOT NULL THEN 1 END)::int             AS asistencias,
     AVG(CASE WHEN r.calificacion IS NOT NULL
               AND t.deleted_at IS NULL THEN r.calificacion END)::numeric AS promedio_raw,
     COUNT(CASE WHEN r.calificacion IS NOT NULL

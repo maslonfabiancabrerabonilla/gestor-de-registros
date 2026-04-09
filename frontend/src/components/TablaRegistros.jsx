@@ -25,7 +25,8 @@ const TIPOS_CLASE = ['C', 'CP', 'PL'];
 
 // ── Cálculo de estadísticas en el cliente ─────────────────────
 function calcStats(est, turnos, registrosMap, totalClasesPlanificadas) {
-  const turnosClase = turnos.filter(t => TIPOS_CLASE.includes(t.tipo));
+  // Solo turnos tipo clase CON FECHA cuentan como "clases dadas"
+  const turnosClase = turnos.filter(t => TIPOS_CLASE.includes(t.tipo) && t.fecha);
 
   const asistencias = turnosClase.filter(
     t => registrosMap[t.id]?.[est.id]?.asistencia === 'A'
@@ -336,7 +337,7 @@ export default function TablaRegistros({
                       ) : (
                       <div className="flex flex-col items-center gap-1">
 
-                        {/* Selector de asistencia: clases → A/F | pruebas → NP */}
+                        {/* Selector de asistencia: clases → A/F | pruebas → —/NP */}
                         {!esPrueba ? (
                           <select
                             value={asist}
@@ -357,7 +358,7 @@ export default function TablaRegistros({
                             onChange={e => {
                               const v = e.target.value || null;
                               setCelda(t.id, est.id, 'asistencia', v);
-                              if (v !== 'A') setCelda(t.id, est.id, 'calificacion', null);
+                              if (v === 'NP') setCelda(t.id, est.id, 'calificacion', null);
                             }}
                             className="text-xs border border-slate-200 rounded px-1 py-0.5 bg-white w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
                           >
@@ -366,20 +367,27 @@ export default function TablaRegistros({
                           </select>
                         )}
 
-                        {/* Input de calificación (solo habilitado si asistió) */}
-                        <input
-                          type="number"
-                          min="2" max="5" step="1"
-                          value={asist === 'A' ? calif : ''}
-                          disabled={asist !== 'A'}
-                          onChange={e => {
-                            const v = e.target.value;
-                            setCelda(t.id, est.id, 'calificacion',
-                              v === '' ? null : parseInt(v, 10));
-                          }}
-                          placeholder={asist !== 'A' ? '✕' : '—'}
-                          className={`text-xs border border-slate-200 rounded px-1 py-0.5 w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400 ${asist !== 'A' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : ''}`}
-                        />
+                        {/* Input de calificación */}
+                        {/* Clases: habilitado solo con A | Pruebas: habilitado salvo NP */}
+                        {(() => {
+                          const califDisabled = esPrueba ? asist === 'NP' : asist !== 'A';
+                          const califValue    = califDisabled ? '' : calif;
+                          return (
+                            <input
+                              type="number"
+                              min="2" max="5" step="1"
+                              value={califValue}
+                              disabled={califDisabled}
+                              onChange={e => {
+                                const v = e.target.value;
+                                setCelda(t.id, est.id, 'calificacion',
+                                  v === '' ? null : parseInt(v, 10));
+                              }}
+                              placeholder={califDisabled ? '✕' : '—'}
+                              className={`text-xs border border-slate-200 rounded px-1 py-0.5 w-14 text-center focus:outline-none focus:ring-1 focus:ring-blue-400 ${califDisabled ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : ''}`}
+                            />
+                          );
+                        })()}
                       </div>
                       )}
                     </td>
@@ -427,9 +435,15 @@ export default function TablaRegistros({
                 {estudiantes.length} estudiantes
               </td>
               {turnos.map(t => {
-                const asistidos = estudiantes.filter(
-                  e => registrosMap[t.id]?.[e.id]?.asistencia === 'A'
-                ).length;
+                const esPruebaTurno = !TIPOS_CLASE.includes(t.tipo);
+                // Clases: contar A | Pruebas: contar quienes NO tienen NP (participaron)
+                const asistidos = estudiantes.filter(e => {
+                  const reg = registrosMap[t.id]?.[e.id];
+                  if (!reg) return false;
+                  return esPruebaTurno
+                    ? reg.asistencia !== 'NP'
+                    : reg.asistencia === 'A';
+                }).length;
                 const conDatos = estudiantes.filter(e => registrosMap[t.id]?.[e.id]).length;
                 return (
                   <td key={t.id} className="border-t border-r border-slate-200 px-2 py-2 text-center">

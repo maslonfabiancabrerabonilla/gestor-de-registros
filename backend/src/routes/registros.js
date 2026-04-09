@@ -22,36 +22,9 @@ router.post('/batch-save', async (req, res, next) => {
     if (!Array.isArray(registros) || !registros.length)
       return res.status(400).json({ error: 'registros debe ser un array no vacío' });
 
-    // Validar rangos y valores antes de abrir la transacción
-    const ASISTENCIA_VALIDA = ['A', 'F', 'NP'];
-    for (const reg of registros) {
-      if (reg.calificacion !== null && reg.calificacion !== undefined) {
-        if (!Number.isInteger(reg.calificacion) || reg.calificacion < 2 || reg.calificacion > 5) {
-          return res.status(400).json({
-            error: `Calificación debe ser un entero entre 2 y 5 para estudiante_id ${reg.estudiante_id}`
-          });
-        }
-        if (reg.asistencia === 'F' || reg.asistencia === 'NP') {
-          return res.status(400).json({
-            error: `No se puede asignar calificación a un estudiante ausente (estudiante_id ${reg.estudiante_id})`
-          });
-        }
-        if (reg.asistencia == null) {
-          return res.status(400).json({
-            error: `Debe registrar asistencia antes de asignar calificación (estudiante_id ${reg.estudiante_id})`
-          });
-        }
-      }
-      if (reg.asistencia != null && !ASISTENCIA_VALIDA.includes(reg.asistencia)) {
-        return res.status(400).json({
-          error: `Valor de asistencia inválido "${reg.asistencia}" para estudiante_id ${reg.estudiante_id}`
-        });
-      }
-    }
-
     await client.query('BEGIN');
 
-    // Verificar turno (dentro de la transacción para evitar race conditions)
+    // Verificar turno PRIMERO (necesitamos saber el tipo para validar registros)
     const turnoRes = await client.query(
       'SELECT * FROM turnos WHERE id = $1 AND deleted_at IS NULL',
       [turno_id]
@@ -62,6 +35,54 @@ router.post('/batch-save', async (req, res, next) => {
     }
     const turno = turnoRes.rows[0];
     const esPrueba = TIPOS_PRUEBA.includes(turno.tipo);
+
+    // Bloquear registros en turnos sin fecha
+    if (!turno.fecha) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'No se pueden registrar datos en un turno sin fecha definida' });
+    }
+
+    // Validar rangos y valores con contexto del tipo de turno
+    const ASISTENCIA_VALIDA = ['A', 'F', 'NP'];
+    for (const reg of registros) {
+      if (reg.calificacion !== null && reg.calificacion !== undefined) {
+        if (!Number.isInteger(reg.calificacion) || reg.calificacion < 2 || reg.calificacion > 5) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({
+            error: `Calificación debe ser un entero entre 2 y 5 para estudiante_id ${reg.estudiante_id}`
+          });
+        }
+        if (esPrueba) {
+          // Pruebas: calificación prohibida si el estudiante NO participó (NP)
+          if (reg.asistencia === 'NP') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+              error: `No se puede asignar calificación a un estudiante que no presentó (estudiante_id ${reg.estudiante_id})`
+            });
+          }
+        } else {
+          // Clases: calificación requiere asistencia='A'
+          if (reg.asistencia === 'F' || reg.asistencia === 'NP') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+              error: `No se puede asignar calificación a un estudiante ausente (estudiante_id ${reg.estudiante_id})`
+            });
+          }
+          if (reg.asistencia == null) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+              error: `Debe registrar asistencia antes de asignar calificación (estudiante_id ${reg.estudiante_id})`
+            });
+          }
+        }
+      }
+      if (reg.asistencia != null && !ASISTENCIA_VALIDA.includes(reg.asistencia)) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `Valor de asistencia inválido "${reg.asistencia}" para estudiante_id ${reg.estudiante_id}`
+        });
+      }
+    }
 
     // Verificar que todos los estudiante_id pertenecen al grupo del turno
     const estudianteIds = [...new Set(registros.map(r => r.estudiante_id))];
