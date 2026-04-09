@@ -172,6 +172,11 @@ export default function PageRegistros() {
               </button>
             </div>
           </div>
+          <button
+            onClick={() => navigate(`/grupos/${id}/admin`)}
+            className="px-3 py-2 text-sm bg-white border border-slate-200 text-slate-700 rounded-lg hover:border-slate-400 hover:text-slate-800 transition"
+            title="Administración del grupo"
+          >⚙ Admin</button>
         </div>
       </header>
 
