@@ -43,9 +43,17 @@ CREATE TABLE IF NOT EXISTS estudiantes (
   deleted_at         TIMESTAMP NULL,
   created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(grupo_id, nombre),
   CONSTRAINT orden_positivo CHECK (orden_alfabetico > 0)
 );
+
+-- Unicidad solo entre estudiantes activos (soft-deleted no colisionan)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_estudiantes_grupo_nombre_activo
+  ON estudiantes(grupo_id, LOWER(nombre)) WHERE deleted_at IS NULL;
+
+-- Migración: si existe la constraint antigua (incluía soft-deleted), reemplazarla
+DO $$ BEGIN
+  ALTER TABLE estudiantes DROP CONSTRAINT IF EXISTS estudiantes_grupo_id_nombre_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
 
 CREATE INDEX IF NOT EXISTS idx_estudiantes_grupo_deleted ON estudiantes(grupo_id, deleted_at);
 

@@ -41,7 +41,8 @@ async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
      LEFT JOIN registros r ON r.turno_id = t.id AND r.estudiante_id = $1
      WHERE t.grupo_id = $2
        AND t.tipo IN ('C', 'CP', 'PL')
-       AND t.deleted_at IS NULL`,
+       AND t.deleted_at IS NULL
+       AND t.fecha IS NOT NULL`,
     [estudiante_id, grupo_id]
   );
   const { asistencias, total_clases } = asistRes.rows[0];

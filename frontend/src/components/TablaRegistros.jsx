@@ -439,7 +439,7 @@ export default function TablaRegistros({
                 // Clases: contar A | Pruebas: contar quienes NO tienen NP (participaron)
                 const asistidos = estudiantes.filter(e => {
                   const reg = registrosMap[t.id]?.[e.id];
-                  if (!reg) return false;
+                  if (!reg || reg.asistencia == null) return false;
                   return esPruebaTurno
                     ? reg.asistencia !== 'NP'
                     : reg.asistencia === 'A';
