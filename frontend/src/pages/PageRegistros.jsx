@@ -7,21 +7,14 @@ import {
   createEstudiante, updateEstudiante, deleteEstudiante, bulkImportEstudiantes,
   batchSave, generarCorte, exportarMatriz,
 } from '../services/api.js';
+import { TIPOS_CLASE }         from '../constants.js';
+import { descargarBlob }       from '../utils/descargarBlob.js';
 import TablaRegistros          from '../components/TablaRegistros.jsx';
 import ModalTurno              from '../components/ModalTurno.jsx';
 import ModalEstudiante         from '../components/ModalEstudiante.jsx';
 import ModalEditarEstudiante   from '../components/ModalEditarEstudiante.jsx';
 import ModalConfirmar          from '../components/ModalConfirmar.jsx';
 import { ArrowLeft, UserPlus, CalendarPlus, Download, Settings, FileSpreadsheet, RefreshCw, Loader2 } from 'lucide-react';
-
-function descargarBlob(blob, nombreArchivo) {
-  const url = URL.createObjectURL(blob);
-  const a   = document.createElement('a');
-  a.href     = url;
-  a.download = nombreArchivo;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
-}
 
 export default function PageRegistros() {
   const { id }   = useParams();
@@ -125,8 +118,8 @@ export default function PageRegistros() {
   const resumen = {
     estudiantes:  estudiantes.length,
     turnos:       turnos.length,
-    turnosClase:  turnos.filter(t => ['C','CP','PL'].includes(t.tipo)).length,
-    turnosPrueba: turnos.filter(t => ['PP','PF','PE','EM'].includes(t.tipo)).length,
+    turnosClase:  turnos.filter(t => TIPOS_CLASE.includes(t.tipo)).length,
+    turnosPrueba: turnos.filter(t => !TIPOS_CLASE.includes(t.tipo)).length,
   };
 
   if (cargando) {

@@ -2,65 +2,8 @@
 // Celdas editables con cambios pendientes y guardado por turno
 import { useState, useCallback, useEffect } from 'react';
 import { Pencil, Trash2, Save, Undo2, AlertTriangle } from 'lucide-react';
-
-// ── Constantes de estilo ──────────────────────────────────────
-const TIPO_COLOR = {
-  C:  'bg-blue-100 text-blue-700',
-  CP: 'bg-indigo-100 text-indigo-700',
-  PL: 'bg-purple-100 text-purple-700',
-  PP: 'bg-orange-100 text-orange-700',
-  PF: 'bg-rose-100 text-rose-700',
-  PE: 'bg-pink-100 text-pink-700',
-  EM: 'bg-teal-100 text-teal-700',
-};
-
-const ASIST_BG = { A: 'bg-green-50', F: 'bg-red-50', NP: 'bg-slate-100' };
-
-const CORTE_BADGE = {
-  B: 'bg-green-100 text-green-800',
-  R: 'bg-yellow-100 text-yellow-800',
-  M: 'bg-red-100  text-red-800',
-};
-
-const TIPOS_CLASE = ['C', 'CP', 'PL'];
-
-// ── Cálculo de estadísticas en el cliente ─────────────────────
-function calcStats(est, turnos, registrosMap, totalClasesPlanificadas) {
-  // Solo turnos tipo clase CON FECHA cuentan como "clases dadas"
-  const turnosClase = turnos.filter(t => TIPOS_CLASE.includes(t.tipo) && t.fecha);
-
-  const asistencias = turnosClase.filter(
-    t => registrosMap[t.id]?.[est.id]?.asistencia === 'A'
-  ).length;
-
-  const clasesDadas   = turnosClase.length;
-  const esProvisional = totalClasesPlanificadas == null;
-  const denominador   = totalClasesPlanificadas ?? clasesDadas;
-  const faltas        = clasesDadas - asistencias;
-  const pctInasistencia = denominador > 0
-    ? Math.round((faltas / denominador) * 1000) / 10
-    : 0;
-  const pct = Math.max(0, 100 - pctInasistencia);
-
-  const cals = turnos
-    .map(t => registrosMap[t.id]?.[est.id]?.calificacion)
-    .filter(c => c != null);
-
-  const promedio = cals.length > 0
-    ? Math.round(cals.reduce((s, c) => s + parseFloat(c), 0) / cals.length * 10) / 10
-    : null;
-
-  let corte = null;
-  if (promedio !== null) {
-    if      (promedio >= 4.0 && pct >= 80) corte = 'B';
-    else if (promedio >= 3.0 && pct >= 70) corte = 'R';
-    else                                   corte = 'M';
-  }
-
-  const alerta = !esProvisional && denominador > 0 && faltas / denominador > 0.20;
-
-  return { asistencias, clasesDadas, denominador, pct, promedio, corte, alerta, esProvisional };
-}
+import { TIPOS_CLASE, TIPO_COLOR, ASIST_BG, CORTE_BADGE } from '../constants.js';
+import { calcStats } from '../utils/estadisticas.js';
 
 function formatFecha(str) {
   if (!str) return 'Sin fecha';

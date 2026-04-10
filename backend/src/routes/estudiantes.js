@@ -2,14 +2,15 @@
 // Montado en: /api/grupos  →  /:grupo_id/estudiantes/...
 import { Router } from 'express';
 import multer  from 'multer';
-import ExcelJS from 'exceljs';
 import pool from '../db.js';
+import { calcularEstadisticasEstudiante } from '../utils/estadisticas.js';
+import { parsearExcel, detectarDuplicadosEnArchivo } from '../utils/excelParser.js';
+import { reordenarEstudiantes } from '../utils/reordenar.js';
 
 const router = Router();
 
 // ── Constantes ────────────────────────────────────────────────
-const MAX_FILE_SIZE   = 5 * 1024 * 1024;  // 5 MB — límite de archivo Excel
-const MAX_BULK_ROWS   = 200;              // máximo de filas en importación masiva
+const MAX_FILE_SIZE = 5 * 1024 * 1024;  // 5 MB — límite de archivo Excel
 
 // Multer: almacenamiento en memoria (no escribe en disco)
 const upload = multer({
@@ -24,71 +25,6 @@ const upload = multer({
     else cb(new Error('Solo se aceptan archivos .xlsx o .xls'));
   },
 });
-
-// ─────────────────────────────────────────────────────────────
-// Helpers de cálculo (reutilizados en /estadisticas)
-// ─────────────────────────────────────────────────────────────
-/**
- * Calcula estadísticas individuales de un estudiante: asistencia, promedio,
- * corte evaluativo (B/R/M) y alerta de inasistencia.
- * @param {number} estudiante_id - ID del estudiante.
- * @param {number} grupo_id      - ID del grupo al que pertenece.
- * @returns {Promise<{asistencias, total_clases, porcentaje_asistencia, promedio, total_evaluaciones, corte, alerta_inasistencia, provisional}>}
- */
-async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
-  // Clases planificadas del grupo (para denominar % asistencia)
-  const grupoRes = await pool.query(
-    'SELECT total_clases_planificadas FROM grupos WHERE id = $1',
-    [grupo_id]
-  );
-  const total_clases_planificadas = grupoRes.rows[0]?.total_clases_planificadas ?? null;
-
-  // Asistencia (solo clases: C, CP, PL)
-  const asistRes = await pool.query(
-    `SELECT
-       COUNT(CASE WHEN r.asistencia = 'A' THEN 1 END)::int AS asistencias,
-       COUNT(t.id)::int                                      AS total_clases
-     FROM turnos t
-     LEFT JOIN registros r ON r.turno_id = t.id AND r.estudiante_id = $1
-     WHERE t.grupo_id = $2
-       AND t.tipo IN ('C', 'CP', 'PL')
-       AND t.fecha IS NOT NULL`,
-    [estudiante_id, grupo_id]
-  );
-  const { asistencias, total_clases } = asistRes.rows[0];
-
-  const esProvisional = total_clases_planificadas === null;
-  const denominador   = total_clases_planificadas ?? total_clases;
-  const faltas        = total_clases - asistencias;
-  const porcentaje_asistencia =
-    denominador > 0 ? Math.max(0, Math.round(((denominador - faltas) / denominador) * 1000) / 10) : 100;
-
-  // Calificaciones (solo no-NULL)
-  const calRes = await pool.query(
-    `SELECT ROUND(AVG(r.calificacion)::numeric, 1) AS promedio,
-            COUNT(r.calificacion)::int              AS total_evaluaciones
-     FROM registros r
-     JOIN turnos t ON r.turno_id = t.id
-     WHERE r.estudiante_id = $1
-       AND r.calificacion IS NOT NULL`,
-    [estudiante_id]
-  );
-  const promedio          = calRes.rows[0].promedio ? parseFloat(calRes.rows[0].promedio) : null;
-  const total_evaluaciones = calRes.rows[0].total_evaluaciones;
-
-  // Corte M/R/B
-  let corte = null;
-  if (promedio !== null) {
-    if      (promedio >= 4.0 && porcentaje_asistencia >= 80) corte = 'B';
-    else if (promedio >= 3.0 && porcentaje_asistencia >= 70) corte = 'R';
-    else                                                      corte = 'M';
-  }
-
-  const alerta_inasistencia =
-    !esProvisional && denominador > 0 && faltas / denominador > 0.20;
-
-  return { asistencias, total_clases, porcentaje_asistencia, promedio, total_evaluaciones, corte, alerta_inasistencia, provisional: esProvisional };
-}
 
 // ─────────────────────────────────────────────────────────────
 // GET /api/grupos/:grupo_id/estudiantes
@@ -150,36 +86,16 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     const { grupo_id } = req.params;
     if (!req.file) return res.status(400).json({ error: 'Se requiere un archivo Excel (campo: archivo)' });
 
-    // 1. Parsear Excel (proteger contra archivos corruptos)
-    const wb = new ExcelJS.Workbook();
+    // 1. Parsear Excel
+    let nombresRAW;
     try {
-      await wb.xlsx.load(req.file.buffer);
-    } catch {
-      return res.status(400).json({ error: 'El archivo no es un Excel válido o está corrupto' });
+      nombresRAW = await parsearExcel(req.file.buffer);
+    } catch (err) {
+      return res.status(err.status || 400).json({ error: err.message });
     }
-    const sheet = wb.worksheets[0];
-
-    const nombresRAW = [];
-    sheet.eachRow((row, rowNum) => {
-      const val = String(row.getCell(1).text ?? '').trim();
-      if (val) nombresRAW.push({ fila: rowNum, valor: val });
-    });
-
-    if (!nombresRAW.length)    return res.status(400).json({ error: 'El archivo no contiene datos' });
-    if (nombresRAW.length > MAX_BULK_ROWS)
-      return res.status(400).json({ error: `Máximo ${MAX_BULK_ROWS} filas permitidas` });
 
     // 2. Detectar duplicados dentro del archivo
-    const seenEnArchivo = new Map();
-    const erroresArchivo = [];
-    nombresRAW.forEach(({ fila, valor }) => {
-      const key = valor.toLowerCase();
-      if (seenEnArchivo.has(key)) {
-        erroresArchivo.push({ fila, valor, razon: `Duplicado con fila ${seenEnArchivo.get(key)}` });
-      } else {
-        seenEnArchivo.set(key, fila);
-      }
-    });
+    const { duplicados: erroresArchivo } = detectarDuplicadosEnArchivo(nombresRAW);
     if (erroresArchivo.length) {
       const detalle = erroresArchivo.map(e => `"${e.valor}" (fila ${e.fila})`).join(', ');
       return res.status(409).json({
@@ -235,15 +151,7 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     }
 
     // Reordenar todo el grupo alfabéticamente tras la inserción masiva
-    await client.query(
-      `WITH ranked AS (
-         SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
-         FROM estudiantes WHERE grupo_id = $1
-       )
-       UPDATE estudiantes e SET orden_alfabetico = ranked.rn
-       FROM ranked WHERE e.id = ranked.id`,
-      [grupo_id]
-    );
+    await reordenarEstudiantes(client, grupo_id);
 
     await client.query(
       `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
@@ -293,15 +201,7 @@ router.post('/:grupo_id/estudiantes', async (req, res, next) => {
     );
 
     // Reordenar todo el grupo alfabéticamente
-    await client.query(
-      `WITH ranked AS (
-         SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
-         FROM estudiantes WHERE grupo_id = $1
-       )
-       UPDATE estudiantes e SET orden_alfabetico = ranked.rn
-       FROM ranked WHERE e.id = ranked.id`,
-      [grupo_id]
-    );
+    await reordenarEstudiantes(client, grupo_id);
 
     await client.query('COMMIT');
     res.status(201).json(insertRes.rows[0]);
@@ -340,15 +240,7 @@ router.put('/:grupo_id/estudiantes/:id', async (req, res, next) => {
     }
 
     // Reordenar todo el grupo alfabéticamente tras el cambio de nombre
-    await client.query(
-      `WITH ranked AS (
-         SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
-         FROM estudiantes WHERE grupo_id = $1
-       )
-       UPDATE estudiantes e SET orden_alfabetico = ranked.rn
-       FROM ranked WHERE e.id = ranked.id`,
-      [grupo_id]
-    );
+    await reordenarEstudiantes(client, grupo_id);
 
     await client.query('COMMIT');
     res.json(result.rows[0]);
@@ -384,15 +276,7 @@ router.delete('/:grupo_id/estudiantes/:id', async (req, res, next) => {
     await client.query('DELETE FROM estudiantes WHERE id = $1', [id]);
 
     // Reordenar los estudiantes restantes
-    await client.query(
-      `WITH ranked AS (
-         SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
-         FROM estudiantes WHERE grupo_id = $1
-       )
-       UPDATE estudiantes e SET orden_alfabetico = ranked.rn
-       FROM ranked WHERE e.id = ranked.id`,
-      [grupo_id]
-    );
+    await reordenarEstudiantes(client, grupo_id);
 
     await client.query(
       `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
