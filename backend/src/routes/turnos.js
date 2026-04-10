@@ -12,7 +12,7 @@ router.get('/:grupo_id/turnos', async (req, res, next) => {
   try {
     const result = await pool.query(
       `SELECT * FROM turnos
-       WHERE grupo_id = $1 AND deleted_at IS NULL
+       WHERE grupo_id = $1
        ORDER BY fecha ASC NULLS LAST, numero_turno ASC`,
       [req.params.grupo_id]
     );
@@ -43,7 +43,7 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
       const tcp = grupoRes.rows[0].total_clases_planificadas;
       if (tcp !== null) {
         const countRes = await client.query(
-          'SELECT COUNT(*)::int AS total FROM turnos WHERE grupo_id = $1 AND deleted_at IS NULL',
+          'SELECT COUNT(*)::int AS total FROM turnos WHERE grupo_id = $1',
           [grupo_id]
         );
         if (countRes.rows[0].total >= tcp) {
@@ -57,7 +57,7 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
     if (fecha) {
       const fechaDup = await client.query(
         `SELECT id FROM turnos
-         WHERE grupo_id = $1 AND fecha = $2 AND deleted_at IS NULL`,
+         WHERE grupo_id = $1 AND fecha = $2`,
         [grupo_id, fecha]
       );
       if (fechaDup.rows.length) {
@@ -66,10 +66,10 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
       }
     }
 
-    // Auto-incrementar numero_turno dentro del grupo (solo activos)
+    // Auto-incrementar numero_turno dentro del grupo
     const maxRes = await client.query(
       `SELECT COUNT(*)::int + 1 AS next
-       FROM turnos WHERE grupo_id = $1 AND deleted_at IS NULL`,
+       FROM turnos WHERE grupo_id = $1`,
       [grupo_id]
     );
     const numero_turno = maxRes.rows[0].next;
@@ -122,7 +122,7 @@ router.put('/:grupo_id/turnos/:id', async (req, res, next) => {
     if (fecha !== undefined && fecha !== null) {
       const fechaDup = await client.query(
         `SELECT id FROM turnos
-         WHERE grupo_id = $1 AND fecha = $2 AND deleted_at IS NULL AND id != $3`,
+         WHERE grupo_id = $1 AND fecha = $2 AND id != $3`,
         [grupo_id, fecha, id]
       );
       if (fechaDup.rows.length) {
@@ -133,7 +133,7 @@ router.put('/:grupo_id/turnos/:id', async (req, res, next) => {
 
     const result = await client.query(
       `UPDATE turnos SET ${campos.join(', ')}
-       WHERE id = $${idx++} AND grupo_id = $${idx++} AND deleted_at IS NULL
+       WHERE id = $${idx++} AND grupo_id = $${idx++}
        RETURNING *`,
       valores
     );
@@ -156,7 +156,7 @@ router.put('/:grupo_id/turnos/:id', async (req, res, next) => {
   } finally { client.release(); }
 });
 
-// DELETE /api/grupos/:grupo_id/turnos/:id — soft delete
+// DELETE /api/grupos/:grupo_id/turnos/:id — hard delete
 router.delete('/:grupo_id/turnos/:id', async (req, res, next) => {
   const client = await pool.connect();
   try {
@@ -164,8 +164,8 @@ router.delete('/:grupo_id/turnos/:id', async (req, res, next) => {
     await client.query('BEGIN');
 
     const result = await client.query(
-      `UPDATE turnos SET deleted_at = NOW()
-       WHERE id = $1 AND grupo_id = $2 AND deleted_at IS NULL
+      `DELETE FROM turnos
+       WHERE id = $1 AND grupo_id = $2
        RETURNING *`,
       [id, grupo_id]
     );
@@ -176,16 +176,16 @@ router.delete('/:grupo_id/turnos/:id', async (req, res, next) => {
 
     await client.query(
       `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
-       VALUES (1, $1, 'soft_delete_turno', $2)`,
+       VALUES (1, $1, 'delete_turno', $2)`,
       [grupo_id, JSON.stringify({ turno_id: id })]
     );
 
-    // Renumerar turnos activos secuencialmente
+    // Renumerar turnos secuencialmente
     await client.query(
       `WITH ranked AS (
          SELECT id, ROW_NUMBER() OVER (ORDER BY fecha ASC NULLS LAST, id ASC) AS rn
          FROM turnos
-         WHERE grupo_id = $1 AND deleted_at IS NULL
+         WHERE grupo_id = $1
        )
        UPDATE turnos t SET numero_turno = ranked.rn
        FROM ranked WHERE t.id = ranked.id`,

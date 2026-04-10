@@ -25,7 +25,7 @@ async function statsGrupo(grupo_id) {
   // Total de turnos tipo clase para el grupo
   const clasesRes = await pool.query(
     `SELECT COUNT(*)::int AS total_clases FROM turnos
-     WHERE grupo_id = $1 AND tipo IN ('C', 'CP', 'PL') AND deleted_at IS NULL`,
+     WHERE grupo_id = $1 AND tipo IN ('C', 'CP', 'PL') AND fecha IS NOT NULL`,
     [grupo_id]
   );
   const total_clases_dadas = clasesRes.rows[0].total_clases;
@@ -38,16 +38,15 @@ async function statsGrupo(grupo_id) {
        e.id, e.nombre, e.orden_alfabetico,
        COUNT(CASE WHEN r.asistencia = 'A'
                    AND t.tipo IN ('C', 'CP', 'PL')
-                   AND t.deleted_at IS NULL THEN 1 END)::int          AS asistencias,
+                   AND t.fecha IS NOT NULL THEN 1 END)::int          AS asistencias,
        ROUND(AVG(CASE WHEN r.calificacion IS NOT NULL
-                       AND t.deleted_at IS NULL
                        THEN r.calificacion END)::numeric, 1)           AS promedio,
        COUNT(CASE WHEN r.calificacion IS NOT NULL
-                   AND t.deleted_at IS NULL THEN 1 END)::int           AS total_evaluaciones
+                   THEN 1 END)::int           AS total_evaluaciones
      FROM estudiantes e
      LEFT JOIN registros r ON r.estudiante_id = e.id
      LEFT JOIN turnos    t ON r.turno_id = t.id
-     WHERE e.grupo_id = $1 AND e.deleted_at IS NULL
+     WHERE e.grupo_id = $1
      GROUP BY e.id, e.nombre, e.orden_alfabetico
      ORDER BY e.orden_alfabetico`,
     [grupo_id]
@@ -98,7 +97,7 @@ router.post('/:grupo_id/reportes/generar-corte', async (req, res, next) => {
     // Validar dataset mínimo
     const turnosCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM turnos
-       WHERE grupo_id = $1 AND deleted_at IS NULL`,
+       WHERE grupo_id = $1`,
       [grupo_id]
     );
     if (turnosCount.rows[0].count === 0) {
@@ -187,12 +186,12 @@ router.get('/:grupo_id/exportar/matriz-completa', async (req, res, next) => {
 
     const [estRes, turnRes] = await Promise.all([
       pool.query(
-        `SELECT * FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL
+        `SELECT * FROM estudiantes WHERE grupo_id = $1
          ORDER BY orden_alfabetico`,
         [grupo_id]
       ),
       pool.query(
-        `SELECT * FROM turnos WHERE grupo_id = $1 AND deleted_at IS NULL
+        `SELECT * FROM turnos WHERE grupo_id = $1
          ORDER BY fecha ASC, numero_turno ASC`,
         [grupo_id]
       ),
@@ -206,7 +205,7 @@ router.get('/:grupo_id/exportar/matriz-completa', async (req, res, next) => {
     const regRes = await pool.query(
       `SELECT r.* FROM registros r
        JOIN turnos t ON r.turno_id = t.id
-       WHERE t.grupo_id = $1 AND t.deleted_at IS NULL`,
+       WHERE t.grupo_id = $1`,
       [grupo_id]
     );
     const regMap = {};

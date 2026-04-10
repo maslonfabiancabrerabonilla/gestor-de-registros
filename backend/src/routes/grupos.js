@@ -119,7 +119,7 @@ router.put('/:id', async (req, res, next) => {
       const nuevoTcp = result.rows[0].total_clases_planificadas;
       const turnosActivos = await client.query(
         `SELECT COUNT(*)::int AS total FROM turnos
-         WHERE grupo_id = $1 AND deleted_at IS NULL`,
+         WHERE grupo_id = $1`,
         [req.params.id]
       );
       const actuales = turnosActivos.rows[0].total;

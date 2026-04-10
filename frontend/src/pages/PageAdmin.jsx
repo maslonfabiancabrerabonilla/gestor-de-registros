@@ -1,15 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate }            from 'react-router-dom';
-import { getGrupo, getAuditoria, getEstudiantes } from '../services/api.js';
+import { getGrupo, getAuditoria } from '../services/api.js';
 
 const ACCION_LABEL = {
   crear_turno:            'Turno creado',
   editar_turno:           'Turno editado',
-  soft_delete_turno:      'Turno eliminado',
+  delete_turno:           'Turno eliminado',
   batch_save:             'Registros guardados',
   bulk_import:            'Importación masiva',
   editar_grupo:           'Grupo editado',
-  hard_delete_estudiante: 'Estudiante eliminado (permanente)',
+  delete_estudiante:      'Estudiante eliminado',
+  // Legado (acciones anteriores en audit_log)
+  soft_delete_turno:      'Turno eliminado',
+  hard_delete_estudiante: 'Estudiante eliminado',
   soft_delete_estudiante: 'Estudiante eliminado',
 };
 
@@ -26,23 +29,19 @@ export default function PageAdmin() {
 
   const [grupo,       setGrupo]       = useState(null);
   const [auditoria,   setAuditoria]   = useState([]);
-  const [eliminados,  setEliminados]  = useState([]);
   const [cargando,    setCargando]    = useState(true);
   const [error,       setError]       = useState('');
-  const [seccion,     setSeccion]     = useState('auditoria'); // 'auditoria' | 'eliminados'
 
   const cargar = useCallback(async () => {
     setCargando(true);
     setError('');
     try {
-      const [grupoData, audData, todosEst] = await Promise.all([
+      const [grupoData, audData] = await Promise.all([
         getGrupo(id),
         getAuditoria(id),
-        getEstudiantes(id, false), // todos, incluyendo soft-deleted
       ]);
       setGrupo(grupoData);
       setAuditoria(audData);
-      setEliminados(todosEst.filter(e => e.deleted_at !== null));
     } catch (err) {
       if (err.message?.includes('404')) navigate('/');
       else setError(err.message);
@@ -61,11 +60,6 @@ export default function PageAdmin() {
     );
   }
 
-  const secciones = [
-    { key: 'auditoria',  label: 'Historial de auditoría', icon: '📋' },
-    { key: 'eliminados', label: 'Estudiantes eliminados',  icon: '🗑' },
-  ];
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
 
@@ -83,21 +77,9 @@ export default function PageAdmin() {
         </p>
       </header>
 
-      {/* Tabs */}
-      <div className="bg-white border-b border-slate-100 px-6 flex gap-1">
-        {secciones.map(s => (
-          <button
-            key={s.key}
-            onClick={() => setSeccion(s.key)}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
-              seccion === s.key
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {s.icon} {s.label}
-          </button>
-        ))}
+      {/* Toolbar */}
+      <div className="bg-white border-b border-slate-100 px-6 py-2 flex items-center gap-1">
+        <span className="text-sm font-medium text-slate-600">📋 Historial de auditoría</span>
         <button
           onClick={cargar}
           className="ml-auto text-xs text-blue-500 hover:underline self-center"
@@ -116,11 +98,10 @@ export default function PageAdmin() {
         )}
 
         {/* ── Auditoría ──────────────────────────────────── */}
-        {seccion === 'auditoria' && (
-          <div>
-            <h2 className="text-base font-semibold text-slate-700 mb-3">
-              Últimas 200 acciones registradas
-            </h2>
+        <div>
+          <h2 className="text-base font-semibold text-slate-700 mb-3">
+            Últimas 200 acciones registradas
+          </h2>
             {auditoria.length === 0 ? (
               <p className="text-slate-400 text-sm py-8 text-center">No hay registros de auditoría aún.</p>
             ) : (
@@ -163,47 +144,7 @@ export default function PageAdmin() {
               </div>
             )}
           </div>
-        )}
-
-        {/* ── Estudiantes eliminados ─────────────────────── */}
-        {seccion === 'eliminados' && (
-          <div>
-            <h2 className="text-base font-semibold text-slate-700 mb-1">
-              Estudiantes eliminados (soft delete)
-            </h2>
-            <p className="text-xs text-slate-400 mb-4">
-              Estos estudiantes fueron eliminados pero sus registros históricos se conservan en la base de datos.
-            </p>
-            {eliminados.length === 0 ? (
-              <p className="text-slate-400 text-sm py-8 text-center">No hay estudiantes eliminados en este grupo.</p>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-50 text-left">
-                      <th className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200">#</th>
-                      <th className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200">Nombre</th>
-                      <th className="px-4 py-3 font-semibold text-slate-600 border-b border-slate-200">Eliminado el</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {eliminados.map((est, i) => (
-                      <tr key={est.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
-                        <td className="px-4 py-2.5 text-slate-400 border-b border-slate-100">{i + 1}</td>
-                        <td className="px-4 py-2.5 font-medium text-slate-600 line-through border-b border-slate-100">
-                          {est.nombre}
-                        </td>
-                        <td className="px-4 py-2.5 text-slate-500 border-b border-slate-100">
-                          {formatTimestamp(est.deleted_at)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
+        </div>
       </main>
     </div>
   );

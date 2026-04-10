@@ -41,7 +41,6 @@ async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
      LEFT JOIN registros r ON r.turno_id = t.id AND r.estudiante_id = $1
      WHERE t.grupo_id = $2
        AND t.tipo IN ('C', 'CP', 'PL')
-       AND t.deleted_at IS NULL
        AND t.fecha IS NOT NULL`,
     [estudiante_id, grupo_id]
   );
@@ -60,8 +59,7 @@ async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
      FROM registros r
      JOIN turnos t ON r.turno_id = t.id
      WHERE r.estudiante_id = $1
-       AND r.calificacion IS NOT NULL
-       AND t.deleted_at IS NULL`,
+       AND r.calificacion IS NOT NULL`,
     [estudiante_id]
   );
   const promedio          = calRes.rows[0].promedio ? parseFloat(calRes.rows[0].promedio) : null;
@@ -86,11 +84,9 @@ async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
 // ─────────────────────────────────────────────────────────────
 router.get('/:grupo_id/estudiantes', async (req, res, next) => {
   try {
-    const { grupo_id }           = req.params;
-    const { solo_activos = 'true' } = req.query;
-    const filtro = solo_activos === 'true' ? 'AND deleted_at IS NULL' : '';
+    const { grupo_id } = req.params;
     const result = await pool.query(
-      `SELECT * FROM estudiantes WHERE grupo_id = $1 ${filtro} ORDER BY orden_alfabetico`,
+      `SELECT * FROM estudiantes WHERE grupo_id = $1 ORDER BY orden_alfabetico`,
       [grupo_id]
     );
     res.json(result.rows);
@@ -184,7 +180,7 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     // 4. Verificar duplicados contra la BD
     const existentesRes = await client.query(
       `SELECT LOWER(nombre) AS n FROM estudiantes
-       WHERE grupo_id = $1 AND deleted_at IS NULL`,
+       WHERE grupo_id = $1`,
       [grupo_id]
     );
     const setExistentes = new Set(existentesRes.rows.map(r => r.n));
@@ -207,7 +203,7 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     // Obtener el máximo orden actual para insertar al final temporalmente
     const maxOrdenRes = await client.query(
       `SELECT COALESCE(MAX(orden_alfabetico), 0) AS max
-       FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL`,
+       FROM estudiantes WHERE grupo_id = $1`,
       [grupo_id]
     );
     let orden = parseInt(maxOrdenRes.rows[0].max);
@@ -224,7 +220,7 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     await client.query(
       `WITH ranked AS (
          SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
-         FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL
+         FROM estudiantes WHERE grupo_id = $1
        )
        UPDATE estudiantes e SET orden_alfabetico = ranked.rn
        FROM ranked WHERE e.id = ranked.id`,
@@ -269,7 +265,7 @@ router.post('/:grupo_id/estudiantes', async (req, res, next) => {
     // Insertar con orden temporal al final
     const maxRes = await client.query(
       `SELECT COALESCE(MAX(orden_alfabetico), 0) + 1 AS next
-       FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL`,
+       FROM estudiantes WHERE grupo_id = $1`,
       [grupo_id]
     );
     const insertRes = await client.query(
@@ -282,7 +278,7 @@ router.post('/:grupo_id/estudiantes', async (req, res, next) => {
     await client.query(
       `WITH ranked AS (
          SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
-         FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL
+         FROM estudiantes WHERE grupo_id = $1
        )
        UPDATE estudiantes e SET orden_alfabetico = ranked.rn
        FROM ranked WHERE e.id = ranked.id`,
@@ -316,20 +312,20 @@ router.put('/:grupo_id/estudiantes/:id', async (req, res, next) => {
 
     const result = await client.query(
       `UPDATE estudiantes SET nombre = $1
-       WHERE id = $2 AND grupo_id = $3 AND deleted_at IS NULL
+       WHERE id = $2 AND grupo_id = $3
        RETURNING *`,
       [nombre.trim(), id, grupo_id]
     );
     if (!result.rows.length) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Estudiante no encontrado o ya eliminado' });
+      return res.status(404).json({ error: 'Estudiante no encontrado' });
     }
 
     // Reordenar todo el grupo alfabéticamente tras el cambio de nombre
     await client.query(
       `WITH ranked AS (
          SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
-         FROM estudiantes WHERE grupo_id = $1 AND deleted_at IS NULL
+         FROM estudiantes WHERE grupo_id = $1
        )
        UPDATE estudiantes e SET orden_alfabetico = ranked.rn
        FROM ranked WHERE e.id = ranked.id`,
@@ -349,13 +345,11 @@ router.put('/:grupo_id/estudiantes/:id', async (req, res, next) => {
 
 // ─────────────────────────────────────────────────────────────
 // DELETE /api/grupos/:grupo_id/estudiantes/:id
-// ?metodo=soft (default) | hard
 // ─────────────────────────────────────────────────────────────
 router.delete('/:grupo_id/estudiantes/:id', async (req, res, next) => {
   const client = await pool.connect();
   try {
     const { grupo_id, id } = req.params;
-    const { metodo = 'soft' } = req.query;
 
     await client.query('BEGIN');
 
@@ -369,21 +363,27 @@ router.delete('/:grupo_id/estudiantes/:id', async (req, res, next) => {
     }
     const estudiante = estRes.rows[0];
 
-    if (metodo === 'hard') {
-      await client.query('DELETE FROM estudiantes WHERE id = $1', [id]);
-    } else {
-      await client.query('UPDATE estudiantes SET deleted_at = NOW() WHERE id = $1', [id]);
-    }
+    await client.query('DELETE FROM estudiantes WHERE id = $1', [id]);
 
-    const accion = metodo === 'hard' ? 'hard_delete_estudiante' : 'soft_delete_estudiante';
+    // Reordenar los estudiantes restantes
+    await client.query(
+      `WITH ranked AS (
+         SELECT id, ROW_NUMBER() OVER (ORDER BY LOWER(nombre)) AS rn
+         FROM estudiantes WHERE grupo_id = $1
+       )
+       UPDATE estudiantes e SET orden_alfabetico = ranked.rn
+       FROM ranked WHERE e.id = ranked.id`,
+      [grupo_id]
+    );
+
     await client.query(
       `INSERT INTO audit_log (profesor_id, grupo_id, accion, detalles)
-       VALUES (1, $1, $2, $3)`,
-      [grupo_id, accion, JSON.stringify({ estudiante_id: parseInt(id), nombre: estudiante.nombre })]
+       VALUES (1, $1, 'delete_estudiante', $2)`,
+      [grupo_id, JSON.stringify({ estudiante_id: parseInt(id), nombre: estudiante.nombre })]
     );
 
     await client.query('COMMIT');
-    res.json({ eliminado: true, metodo, id: parseInt(id) });
+    res.json({ eliminado: true, id: parseInt(id) });
   } catch (err) {
     await client.query('ROLLBACK');
     next(err);

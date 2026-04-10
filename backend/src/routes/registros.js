@@ -26,7 +26,7 @@ router.post('/batch-save', async (req, res, next) => {
 
     // Verificar turno PRIMERO (necesitamos saber el tipo para validar registros)
     const turnoRes = await client.query(
-      'SELECT * FROM turnos WHERE id = $1 AND deleted_at IS NULL',
+      'SELECT * FROM turnos WHERE id = $1',
       [turno_id]
     );
     if (!turnoRes.rows.length) {
@@ -88,7 +88,7 @@ router.post('/batch-save', async (req, res, next) => {
     const estudianteIds = [...new Set(registros.map(r => r.estudiante_id))];
     const estCheck = await client.query(
       `SELECT id FROM estudiantes
-       WHERE id = ANY($1) AND grupo_id = $2 AND deleted_at IS NULL`,
+       WHERE id = ANY($1) AND grupo_id = $2`,
       [estudianteIds, turno.grupo_id]
     );
     if (estCheck.rows.length !== estudianteIds.length) {

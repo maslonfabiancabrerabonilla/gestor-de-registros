@@ -22,8 +22,8 @@ export const updateGrupo     = (id, data) => fetch(`/api/grupos/${id}`, {
 export const deleteGrupo     = (id)       => fetch(`/api/grupos/${id}`, { method: 'DELETE' }).then(handleResponse);
 
 // ── Estudiantes ───────────────────────────────────────────────
-export const getEstudiantes  = (gid, soloActivos = true) =>
-  fetch(`/api/grupos/${gid}/estudiantes?solo_activos=${soloActivos}`).then(handleResponse);
+export const getEstudiantes  = (gid) =>
+  fetch(`/api/grupos/${gid}/estudiantes`).then(handleResponse);
 
 // TODO(futuro): estadísticas individuales por estudiante. Actualmente el cálculo
 // se realiza en el cliente (calcStats en TablaRegistros). Endpoint listo para uso futuro.
@@ -38,8 +38,8 @@ export const updateEstudiante = (gid, eid, data) => fetch(`/api/grupos/${gid}/es
   method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
 }).then(handleResponse);
 
-export const deleteEstudiante = (gid, eid, metodo = 'soft') =>
-  fetch(`/api/grupos/${gid}/estudiantes/${eid}?metodo=${metodo}`, { method: 'DELETE' }).then(handleResponse);
+export const deleteEstudiante = (gid, eid) =>
+  fetch(`/api/grupos/${gid}/estudiantes/${eid}`, { method: 'DELETE' }).then(handleResponse);
 
 export const bulkImportEstudiantes = (gid, archivo) => {
   const fd = new FormData();
