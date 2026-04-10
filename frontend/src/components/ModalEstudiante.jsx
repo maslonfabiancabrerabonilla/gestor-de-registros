@@ -60,6 +60,11 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
           /* ── Resumen de importación ──────────────────────── */
           <div className="px-6 py-5 flex flex-col gap-4">
             <p className="text-slate-700 font-medium">Importación completada</p>
+            {resultado.mensaje && (
+              <p className="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
+                {resultado.mensaje}
+              </p>
+            )}
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="bg-green-50 rounded-xl p-3">
                 <p className="text-2xl font-bold text-green-700">{resultado.importados ?? 0}</p>

@@ -188,12 +188,13 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     const nuevos     = nombresOrdenados.filter(n => !setExistentes.has(n.toLowerCase()));
     const duplicados = nombresOrdenados.filter(n =>  setExistentes.has(n.toLowerCase()));
 
-    if (duplicados.length > 0) {
-      return res.status(409).json({
-        exito: false,
-        duplicados,
-        nuevo_pendiente: nuevos.length,
-        mensaje: 'Hay estudiantes que ya existen en el grupo. Elimínalos del archivo y vuelve a importar.',
+    // Si no hay nuevos, informar sin error
+    if (nuevos.length === 0) {
+      return res.json({
+        exito:      true,
+        importados: 0,
+        duplicados: duplicados.length,
+        mensaje:    'Todos los estudiantes del archivo ya existen en el grupo.',
       });
     }
 
@@ -237,7 +238,7 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     res.json({
       exito:      true,
       importados: nuevos.length,
-      duplicados: 0,
+      duplicados: duplicados.length,
       errores:    0,
     });
   } catch (err) {
