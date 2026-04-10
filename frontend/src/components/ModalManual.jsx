@@ -5,7 +5,7 @@ const MANUAL_SECCIONES = [
   {
     titulo: 'Grupos',
     items: [
-      { termino: 'Crear grupo', desc: 'Usa el botón "Nuevo Grupo" para registrar una asignatura. Opcionalmente define el total de clases planificadas para habilitar el rastreo automático de asistencia.' },
+      { termino: 'Crear grupo', desc: 'Usa el botón "Nuevo Grupo" para crear un nuevo registro perteneciente a una asignatura y grupo. Opcionalmente define el total de clases planificadas para habilitar el rastreo automático de asistencia.' },
       { termino: 'Editar / Eliminar', desc: 'Cada tarjeta de grupo tiene botones para editar (✏️) y eliminar (🗑️). Eliminar un grupo borra todos sus datos permanentemente.' },
       { termino: 'Semestre', desc: 'Campo opcional para identificar el periodo académico (ej. 2025-2).' },
     ],
@@ -21,13 +21,13 @@ const MANUAL_SECCIONES = [
   {
     titulo: 'Turnos',
     items: [
-      { termino: 'Tipos de turno', desc: 'C (Clase), CP (Clase Práctica), PL (Práctica de Lab.) cuentan para asistencia. PP, PF, PE (Pruebas) y EM (Examen) son evaluaciones.' },
+      { termino: 'Tipos de turno', desc: 'C (Conferencias), CP (Clase Práctica), PL (Práctica de Laboratorio) cuentan para asistencia. PP (Prueba Parcial), PF (Prueba Final), PE (Prueba Especial o Extraordinario) y EM (Examen Mundial) son evaluaciones.' },
       { termino: 'Fecha', desc: 'Opcional al crear, pero obligatoria para poder registrar asistencia. Sin fecha el turno aparece como "Sin fecha".' },
       { termino: 'Límite', desc: 'Si el grupo tiene clases planificadas, no se pueden crear más turnos de los definidos.' },
     ],
   },
   {
-    titulo: 'Registros (la grilla)',
+    titulo: 'Registros',
     items: [
       { termino: 'Asistencia', desc: 'Selecciona A (Asistió), F (Faltó) o NP (No Presentó, solo en evaluaciones). Cada cambio queda pendiente hasta guardar.' },
       { termino: 'Calificación', desc: 'Entero de 2 a 5. Solo se puede asignar si el estudiante asistió (A).' },
