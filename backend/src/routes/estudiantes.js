@@ -7,10 +7,14 @@ import pool from '../db.js';
 
 const router = Router();
 
+// ── Constantes ────────────────────────────────────────────────
+const MAX_FILE_SIZE   = 5 * 1024 * 1024;  // 5 MB — límite de archivo Excel
+const MAX_BULK_ROWS   = 200;              // máximo de filas en importación masiva
+
 // Multer: almacenamiento en memoria (no escribe en disco)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },            // 5 MB máximo
+  limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     const permitidos = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -24,6 +28,13 @@ const upload = multer({
 // ─────────────────────────────────────────────────────────────
 // Helpers de cálculo (reutilizados en /estadisticas)
 // ─────────────────────────────────────────────────────────────
+/**
+ * Calcula estadísticas individuales de un estudiante: asistencia, promedio,
+ * corte evaluativo (B/R/M) y alerta de inasistencia.
+ * @param {number} estudiante_id - ID del estudiante.
+ * @param {number} grupo_id      - ID del grupo al que pertenece.
+ * @returns {Promise<{asistencias, total_clases, porcentaje_asistencia, promedio, total_evaluaciones, corte, alerta_inasistencia, provisional}>}
+ */
 async function calcularEstadisticasEstudiante(estudiante_id, grupo_id) {
   // Clases planificadas del grupo (para denominar % asistencia)
   const grupoRes = await pool.query(
@@ -139,9 +150,13 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     const { grupo_id } = req.params;
     if (!req.file) return res.status(400).json({ error: 'Se requiere un archivo Excel (campo: archivo)' });
 
-    // 1. Parsear Excel
+    // 1. Parsear Excel (proteger contra archivos corruptos)
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(req.file.buffer);
+    try {
+      await wb.xlsx.load(req.file.buffer);
+    } catch {
+      return res.status(400).json({ error: 'El archivo no es un Excel válido o está corrupto' });
+    }
     const sheet = wb.worksheets[0];
 
     const nombresRAW = [];
@@ -151,7 +166,8 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
     });
 
     if (!nombresRAW.length)    return res.status(400).json({ error: 'El archivo no contiene datos' });
-    if (nombresRAW.length > 200) return res.status(400).json({ error: 'Máximo 200 filas permitidas' });
+    if (nombresRAW.length > MAX_BULK_ROWS)
+      return res.status(400).json({ error: `Máximo ${MAX_BULK_ROWS} filas permitidas` });
 
     // 2. Detectar duplicados dentro del archivo
     const seenEnArchivo = new Map();

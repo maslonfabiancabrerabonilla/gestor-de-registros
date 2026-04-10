@@ -1,3 +1,4 @@
+// Enrutador principal de la SPA — define las 3 rutas de la aplicación
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PageGrupos    from './pages/PageGrupos.jsx';
 import PageRegistros from './pages/PageRegistros.jsx';

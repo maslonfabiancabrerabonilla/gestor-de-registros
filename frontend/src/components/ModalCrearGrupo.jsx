@@ -1,3 +1,4 @@
+// Modal para crear un nuevo grupo docente (nombre, asignatura, semestre, clases planificadas)
 import { useState } from 'react';
 import { createGrupo } from '../services/api.js';
 import { FolderPlus, Loader2 } from 'lucide-react';

@@ -31,6 +31,9 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
     if (!TIPOS_VALIDOS.includes(tipo)) {
       return res.status(400).json({ error: `tipo inválido. Opciones: ${TIPOS_VALIDOS.join(', ')}` });
     }
+    if (descripcion && descripcion.trim().length > 500) {
+      return res.status(400).json({ error: 'La descripción no puede superar 500 caracteres' });
+    }
 
     await client.query('BEGIN');
 

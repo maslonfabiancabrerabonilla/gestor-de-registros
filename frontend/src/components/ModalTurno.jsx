@@ -1,3 +1,4 @@
+// Modal para crear o editar un turno (tipo, fecha, descripción)
 import { useState, useEffect } from 'react';
 import { CalendarPlus, Pencil, X, Loader2 } from 'lucide-react';
 
@@ -125,7 +126,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
               value={descripcion}
               onChange={e => setDescripcion(e.target.value)}
               placeholder="Ej: Introducción a álgebra lineal"
-              maxLength={200}
+              maxLength={500}
               className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 input-glow transition"
             />
           </div>

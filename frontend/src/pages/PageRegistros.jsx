@@ -1,4 +1,5 @@
-﻿import { useEffect, useState, useCallback } from 'react';
+﻿// Vista de registros de un grupo: grilla estudiantes × turnos con edición inline
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate }            from 'react-router-dom';
 import {
   getGrupo, getEstudiantes, getTurnos, getRegistrosTurno,

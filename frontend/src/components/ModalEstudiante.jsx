@@ -1,7 +1,7 @@
+// Modal dual: alta manual de un estudiante o importación masiva desde Excel
 import { useState } from 'react';
 import { UserPlus, Upload, X, Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
 
-// Modal para agregar un solo estudiante o importar Excel masivo
 const NOMBRE_REGEX = /^[\p{L}\s\-.]+$/u;
 
 export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createEstudiante, bulkImportEstudiantes }) {

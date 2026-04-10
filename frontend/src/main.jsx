@@ -1,3 +1,4 @@
+// Punto de entrada React — monta la app con BrowserRouter y StrictMode
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

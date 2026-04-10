@@ -1,3 +1,4 @@
+// Configuración de Vite: proxy al backend, entorno de test Vitest
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

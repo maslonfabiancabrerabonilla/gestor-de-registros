@@ -1,3 +1,4 @@
+// Modal para renombrar un estudiante existente
 import { useState } from 'react';
 import { UserPen, X, Loader2 } from 'lucide-react';
 

@@ -6,14 +6,23 @@ import pool      from '../db.js';
 
 const router = Router();
 
-// Colores para cortes (ARGB con alpha FF = opaco)
+// Colores ARGB para pintar celdas de corte en Excel.
+// Formato: FF (opacidad 100%) + RGB hex → verde, dorado, rojo.
 const COLOR_CORTE = { B: 'FF90EE90', R: 'FFFFD700', M: 'FFFF6961' };
+
+// Etiquetas descriptivas que acompañan cada corte en la columna "Observación".
 const OBS_CORTE  = { B: 'Excelente', R: 'Revisar',  M: 'Riesgo', null: '' };
 
 // ─────────────────────────────────────────────────────────────
 // Helper: estadísticas de todos los estudiantes de un grupo
 // en 2 queries (evita N+1)
 // ─────────────────────────────────────────────────────────────
+/**
+ * Calcula asistencia, promedio y corte (B/R/M) para todos los
+ * estudiantes de un grupo en solo 3 queries (evita N+1).
+ * @param {number} grupo_id - ID del grupo.
+ * @returns {Promise<Array<{nombre, promedio, porcentaje_asistencia, asistencias, total_clases, total_evaluaciones, corte, provisional}>>}
+ */
 async function statsGrupo(grupo_id) {
   // Total de clases planificadas (si está definido) y clases dadas
   const grupoRes = await pool.query(

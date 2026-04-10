@@ -1,3 +1,4 @@
+// Modal para editar datos de un grupo existente
 import { useState } from 'react';
 import { updateGrupo } from '../services/api.js';
 import { Pencil, Loader2 } from 'lucide-react';

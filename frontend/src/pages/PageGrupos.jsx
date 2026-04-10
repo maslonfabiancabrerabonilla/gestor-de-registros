@@ -1,3 +1,4 @@
+// Página principal: listado de grupos con acciones CRUD
 import { useEffect, useState } from 'react';
 import { useNavigate }         from 'react-router-dom';
 import { getGrupos, deleteGrupo } from '../services/api.js';

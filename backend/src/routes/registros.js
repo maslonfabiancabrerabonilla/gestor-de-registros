@@ -5,7 +5,8 @@ import pool from '../db.js';
 
 const router = Router();
 
-// Turnos tipo prueba: la asistencia se omite del % y se almacena como NP si procede
+// Turnos tipo prueba/examen: la asistencia no cuenta para el % y se almacena
+// como NP (No Presentó) si el estudiante no participó en la evaluación.
 const TIPOS_PRUEBA = ['PP', 'PF', 'PE', 'EM'];
 
 // ─────────────────────────────────────────────────────────────
@@ -18,7 +19,8 @@ router.post('/batch-save', async (req, res, next) => {
   try {
     const { turno_id, registros } = req.body;
 
-    if (!turno_id)                              return res.status(400).json({ error: 'turno_id es obligatorio' });
+    if (!turno_id || !Number.isInteger(turno_id))
+      return res.status(400).json({ error: 'turno_id es obligatorio y debe ser un entero' });
     if (!Array.isArray(registros) || !registros.length)
       return res.status(400).json({ error: 'registros debe ser un array no vacío' });
 
@@ -68,7 +70,7 @@ router.post('/batch-save', async (req, res, next) => {
               error: `No se puede asignar calificación a un estudiante ausente (estudiante_id ${reg.estudiante_id})`
             });
           }
-          if (reg.asistencia == null) {
+          if (reg.asistencia === null || reg.asistencia === undefined) {
             await client.query('ROLLBACK');
             return res.status(400).json({
               error: `Debe registrar asistencia antes de asignar calificación (estudiante_id ${reg.estudiante_id})`
@@ -76,7 +78,7 @@ router.post('/batch-save', async (req, res, next) => {
           }
         }
       }
-      if (reg.asistencia != null && !ASISTENCIA_VALIDA.includes(reg.asistencia)) {
+      if (reg.asistencia !== null && reg.asistencia !== undefined && !ASISTENCIA_VALIDA.includes(reg.asistencia)) {
         await client.query('ROLLBACK');
         return res.status(400).json({
           error: `Valor de asistencia inválido "${reg.asistencia}" para estudiante_id ${reg.estudiante_id}`
@@ -138,13 +140,15 @@ router.post('/batch-save', async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────
 router.get('/turno/:turno_id', async (req, res, next) => {
   try {
+    const turno_id = parseInt(req.params.turno_id, 10);
+    if (Number.isNaN(turno_id)) return res.status(400).json({ error: 'turno_id inválido' });
     const result = await pool.query(
       `SELECT r.*, e.nombre, e.orden_alfabetico
        FROM registros r
        JOIN estudiantes e ON e.id = r.estudiante_id
        WHERE r.turno_id = $1
        ORDER BY e.orden_alfabetico`,
-      [req.params.turno_id]
+      [turno_id]
     );
     res.json(result.rows);
   } catch (err) { next(err); }

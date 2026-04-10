@@ -1,3 +1,4 @@
+// Panel de administración: historial de auditoría de un grupo
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate }            from 'react-router-dom';
 import { getGrupo, getAuditoria } from '../services/api.js';

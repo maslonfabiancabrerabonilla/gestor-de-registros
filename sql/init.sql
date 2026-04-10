@@ -126,7 +126,11 @@ ON CONFLICT DO NOTHING;
 
 -- ── Vista: Estadísticas por Estudiante ───────────────────────
 -- Calcula asistencia, promedio y corte M/R/B en tiempo real.
--- Reglas confirmadas:
+-- Esta vista NO se usa directamente en la app (el backend tiene helpers
+-- propios en estudiantes.js y reportes.js), pero se mantiene como
+-- referencia canónica de las reglas de negocio y para consultas ad-hoc.
+--
+-- Reglas de negocio confirmadas:
 --   * Solo turnos tipo C/CP/PL cuentan para % asistencia
 --   * Denominador: total_clases_planificadas (si definido), sino clases dadas
 --   * Corte B: promedio >= 4.0 AND asistencia >= 80%
