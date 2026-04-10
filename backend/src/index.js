@@ -2,10 +2,12 @@
 // backend/src/index.js — Entry point SGD-UCI Backend
 // ============================================================
 
-import express   from 'express';
-import cors      from 'cors';
-import helmet    from 'helmet';
-import dotenv    from 'dotenv';
+import express          from 'express';
+import cors             from 'cors';
+import helmet           from 'helmet';
+import dotenv           from 'dotenv';
+import { fileURLToPath } from 'node:url';
+import path             from 'node:path';
 
 import pool              from './db.js';
 import gruposRouter      from './routes/grupos.js';
@@ -49,8 +51,9 @@ app.use((err, req, res, _next) => {
 });
 
 // ── Iniciar servidor (solo si se ejecuta directamente) ───────
-const isMainModule = process.argv[1] && import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`;
-if (isMainModule || process.env.NODE_ENV !== 'test') {
+const __filename = fileURLToPath(import.meta.url);
+const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isMainModule) {
   const server = app.listen(port, () => {
     console.log(`✓ Servidor en puerto ${port}`);
     console.log(`✓ BD: ${process.env.POSTGRES_DB ?? 'configurada'}`);

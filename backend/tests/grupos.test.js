@@ -19,6 +19,7 @@ describe('API /api/grupos', () => {
 
   after(async () => {
     await pool.query("DELETE FROM grupos WHERE nombre LIKE 'TGRP_%'");
+    await pool.end();
   });
 
   // ── POST ────────────────────────────────────────────────────

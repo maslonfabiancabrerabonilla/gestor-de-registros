@@ -21,6 +21,7 @@ describe('API /api/grupos/:gid/turnos', () => {
 
   after(async () => {
     await pool.query("DELETE FROM grupos WHERE nombre LIKE 'TEST_Turno%'");
+    await pool.end();
   });
 
   // ── POST ────────────────────────────────────────────────────

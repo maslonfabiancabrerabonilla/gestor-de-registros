@@ -37,6 +37,7 @@ describe('API /api/registros', () => {
 
   after(async () => {
     await pool.query("DELETE FROM grupos WHERE nombre LIKE 'TEST_Reg%' OR nombre LIKE 'TEST_Otro%'");
+    await pool.end();
   });
 
   // ── Validaciones básicas ───────────────────────────────────

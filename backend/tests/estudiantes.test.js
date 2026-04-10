@@ -21,6 +21,7 @@ describe('API /api/grupos/:gid/estudiantes', () => {
 
   after(async () => {
     await pool.query("DELETE FROM grupos WHERE nombre LIKE 'TEST_Est%'");
+    await pool.end();
   });
 
   // ── POST individual ────────────────────────────────────────

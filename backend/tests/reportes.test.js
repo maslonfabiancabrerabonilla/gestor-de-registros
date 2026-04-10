@@ -33,6 +33,7 @@ describe('API /api/grupos/:gid/reportes y exportar', () => {
 
   after(async () => {
     await pool.query("DELETE FROM grupos WHERE nombre LIKE 'TEST_Rep%' OR nombre LIKE 'TEST_Vacio%'");
+    await pool.end();
   });
 
   // ── Generar corte evaluativo ───────────────────────────────

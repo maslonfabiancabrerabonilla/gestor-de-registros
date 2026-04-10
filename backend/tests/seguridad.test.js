@@ -9,7 +9,7 @@ import pool from '../src/db.js';
 
 describe('Health Check y seguridad', () => {
   after(async () => {
-    // No cerrar pool - se cierra al terminar el proceso
+    await pool.end();
   });
 
   it('GET /health — devuelve status ok', async () => {
