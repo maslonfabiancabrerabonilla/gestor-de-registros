@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate }            from 'react-router-dom';
 import { getGrupo, getAuditoria } from '../services/api.js';
-import { ArrowLeft, Shield, RefreshCw, Loader2, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Shield, RefreshCw, Loader2 } from 'lucide-react';
 
 const ACCION_LABEL = {
   crear_turno:            'Turno creado',
@@ -69,38 +69,25 @@ export default function PageAdmin() {
     <div className="min-h-screen flex flex-col">
 
       {/* Header */}
-      <header className="bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 px-6 py-5 shadow-lg shadow-slate-900/20">
-        <button
-          onClick={() => navigate(`/grupos/${id}`)}
-          className="flex items-center gap-1 text-sm text-slate-300 hover:text-white transition mb-1"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" /> Volver a {grupo?.nombre ?? 'Registros'}
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5">
-            <Shield className="w-6 h-6 text-white" />
+      <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2 flex items-center justify-between gap-3 shadow-lg shadow-indigo-500/20">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button onClick={() => navigate(`/grupos/${id}`)} className="p-1.5 text-blue-200 hover:text-white hover:bg-white/10 rounded-lg transition" title="Volver a Registros">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="bg-white/20 rounded-lg p-1.5">
+            <Shield className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">Administración</h1>
-            <p className="text-xs text-slate-300 mt-0.5">
-              {grupo?.nombre} · {grupo?.asignatura}
+          <div className="min-w-0">
+            <h1 className="text-base font-bold text-white tracking-tight">Administración</h1>
+            <p className="text-[11px] text-blue-200 truncate">
+              {grupo?.nombre} &middot; {grupo?.asignatura}
             </p>
           </div>
         </div>
-      </header>
-
-      {/* Toolbar */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-6 py-2.5 flex items-center gap-1">
-        <div className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
-          <ClipboardList className="w-4 h-4 text-indigo-400" /> Historial de auditoría
-        </div>
-        <button
-          onClick={cargar}
-          className="flex items-center gap-1 ml-auto text-xs text-indigo-500 hover:text-indigo-700 transition"
-        >
-          <RefreshCw className="w-3 h-3" /> Recargar
+        <button onClick={cargar} className="p-1.5 text-blue-200 hover:text-white hover:bg-white/10 rounded-lg transition" title="Recargar">
+          <RefreshCw className="w-3.5 h-3.5" />
         </button>
-      </div>
+      </header>
 
       {/* Contenido */}
       <main className="flex-1 p-4 md:p-6 max-w-4xl mx-auto w-full">

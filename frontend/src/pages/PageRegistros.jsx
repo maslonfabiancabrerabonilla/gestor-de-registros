@@ -12,7 +12,7 @@ import ModalTurno              from '../components/ModalTurno.jsx';
 import ModalEstudiante         from '../components/ModalEstudiante.jsx';
 import ModalEditarEstudiante   from '../components/ModalEditarEstudiante.jsx';
 import ModalConfirmar          from '../components/ModalConfirmar.jsx';
-import { ArrowLeft, UserPlus, CalendarPlus, Download, Settings, Users, Calendar, FileSpreadsheet, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, UserPlus, CalendarPlus, Download, Settings, FileSpreadsheet, RefreshCw, Loader2 } from 'lucide-react';
 
 function descargarBlob(blob, nombreArchivo) {
   const url = URL.createObjectURL(blob);
@@ -141,66 +141,61 @@ export default function PageRegistros() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col">
 
-      <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-6 py-4 flex items-start justify-between gap-4 flex-wrap shadow-lg shadow-indigo-500/20">
-        <div>
-          <button onClick={() => navigate('/')} className="flex items-center gap-1 text-sm text-blue-100 hover:text-white transition mb-1">
-            <ArrowLeft className="w-3.5 h-3.5" /> Mis Grupos
+      <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2 flex items-center justify-between gap-3 flex-wrap shadow-lg shadow-indigo-500/20">
+        <div className="flex items-center gap-3 min-w-0">
+          <button onClick={() => navigate('/')} className="p-1.5 text-blue-200 hover:text-white hover:bg-white/10 rounded-lg transition" title="Mis Grupos">
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <h1 className="text-xl font-bold text-white tracking-tight">{grupo?.nombre}</h1>
-          <p className="text-xs text-blue-100 mt-0.5">
-            {grupo?.asignatura}
-            {grupo?.semestre && <span className="ml-1 text-blue-200">&middot; {grupo.semestre}</span>}
-          </p>
+          <div className="min-w-0">
+            <h1 className="text-base font-bold text-white tracking-tight truncate">{grupo?.nombre}</h1>
+            <p className="text-[11px] text-blue-200 truncate">
+              {grupo?.asignatura}
+              {grupo?.semestre && <span className="ml-1">&middot; {grupo.semestre}</span>}
+              <span className="ml-2 text-blue-300/80">
+                {resumen.estudiantes} est. &middot; {resumen.turnos} turnos
+              </span>
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button onClick={cargar} className="p-1.5 text-blue-200 hover:text-white hover:bg-white/10 rounded-lg transition" title="Recargar">
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={() => setModalEstudiante(true)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-xl hover:bg-white/25 transition"
-          ><UserPlus className="w-4 h-4" /> Estudiantes</button>
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-white/15 text-white border border-white/20 rounded-lg hover:bg-white/25 transition"
+          ><UserPlus className="w-3.5 h-3.5" /> Estudiantes</button>
           {(!grupo?.total_clases_planificadas || turnos.length < grupo.total_clases_planificadas) && (
             <button
               onClick={abrirNuevoTurno}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white text-indigo-700 font-medium rounded-xl hover:bg-indigo-50 transition shadow-md shadow-indigo-900/20"
-            ><CalendarPlus className="w-4 h-4" /> Nuevo Turno</button>
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-white text-indigo-700 font-medium rounded-lg hover:bg-indigo-50 transition shadow-md shadow-indigo-900/20"
+            ><CalendarPlus className="w-3.5 h-3.5" /> Turno</button>
           )}
           <div className="relative group">
             <button
               disabled={exportando}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-xl hover:bg-white/25 transition disabled:opacity-50"
-            ><Download className="w-4 h-4" /> {exportando ? 'Exportando...' : 'Exportar'}</button>
-            <div className="absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-xl py-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all z-30">
-              <button onClick={() => exportarExcel('corte')} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition">
-                <FileSpreadsheet className="w-4 h-4 text-green-600" /> Reporte de corte
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-white/15 text-white border border-white/20 rounded-lg hover:bg-white/25 transition disabled:opacity-50"
+            ><Download className="w-3.5 h-3.5" /> {exportando ? '...' : 'Exportar'}</button>
+            <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all z-30">
+              <button onClick={() => exportarExcel('corte')} className="flex items-center gap-2 w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition">
+                <FileSpreadsheet className="w-3.5 h-3.5 text-green-600" /> Reporte de corte
               </button>
-              <button onClick={() => exportarExcel('matriz')} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition">
-                <FileSpreadsheet className="w-4 h-4 text-green-600" /> Matriz completa
+              <button onClick={() => exportarExcel('matriz')} className="flex items-center gap-2 w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition">
+                <FileSpreadsheet className="w-3.5 h-3.5 text-green-600" /> Matriz completa
               </button>
             </div>
           </div>
           <button
             onClick={() => navigate(`/grupos/${id}/admin`)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-xl hover:bg-white/25 transition"
-            title="Administración del grupo"
-          ><Settings className="w-4 h-4" /> Admin</button>
+            className="p-1.5 text-blue-200 hover:text-white hover:bg-white/10 rounded-lg transition"
+            title="Administración"
+          ><Settings className="w-3.5 h-3.5" /></button>
         </div>
       </header>
 
-      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-6 py-2.5 flex items-center gap-5 text-sm text-slate-500 flex-wrap">
-        <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-indigo-400" /><span className="font-semibold text-slate-700">{resumen.estudiantes}</span> estudiantes</span>
-        <span className="text-slate-300">|</span>
-        <span className="flex items-center gap-1.5">
-          <Calendar className="w-4 h-4 text-indigo-400" />
-          <span className="font-semibold text-slate-700">{resumen.turnos}</span> turnos
-          {resumen.turnos > 0 && <span className="ml-1 text-slate-400">({resumen.turnosClase} clases &middot; {resumen.turnosPrueba} pruebas)</span>}
-        </span>
-        <button onClick={cargar} className="flex items-center gap-1 ml-auto text-xs text-indigo-500 hover:text-indigo-700 transition">
-          <RefreshCw className="w-3 h-3" /> Recargar
-        </button>
-      </div>
-
-      <main className="flex-1 p-4 md:p-6">
+      <main className="flex-1 min-h-0 p-3 md:p-4 flex flex-col">
         {error && (
           <div className="mb-4 bg-red-50 text-red-700 rounded-xl px-4 py-3 text-sm flex items-center gap-3">
             <span>{error}</span>
