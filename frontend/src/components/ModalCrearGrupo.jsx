@@ -1,6 +1,7 @@
 // Modal para crear un nuevo grupo docente (nombre, asignatura, semestre, clases planificadas)
 import { useState } from 'react';
 import { createGrupo } from '../services/api.js';
+import { MAX_TURNOS }  from '../constants.js';
 import { FolderPlus, Loader2 } from 'lucide-react';
 
 export default function ModalCrearGrupo({ onCerrar, onCreado }) {
@@ -17,6 +18,10 @@ export default function ModalCrearGrupo({ onCerrar, onCreado }) {
     e.preventDefault();
     if (!form.nombre.trim())     return setError('El nombre del grupo es obligatorio.');
     if (!form.asignatura.trim()) return setError('La asignatura es obligatoria.');
+
+    const tcpVal = form.total_clases_planificadas !== '' ? parseInt(form.total_clases_planificadas, 10) : null;
+    if (tcpVal !== null && tcpVal > MAX_TURNOS)
+      return setError(`El total de clases planificadas no puede superar ${MAX_TURNOS}.`);
 
     setCargando(true);
     try {
@@ -97,6 +102,7 @@ export default function ModalCrearGrupo({ onCerrar, onCreado }) {
               name="total_clases_planificadas"
               type="number"
               min="1"
+              max={MAX_TURNOS}
               value={form.total_clases_planificadas}
               onChange={handleChange}
               placeholder="Ej: 20"

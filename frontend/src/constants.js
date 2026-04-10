@@ -1,5 +1,8 @@
 // ── Constantes compartidas del frontend ───────────────────────
 
+/** Límite máximo absoluto de turnos por grupo */
+export const MAX_TURNOS = 60;
+
 /** Tipos de turno que cuentan como "clase" para calcular asistencia */
 export const TIPOS_CLASE = ['C', 'CP', 'PL'];
 

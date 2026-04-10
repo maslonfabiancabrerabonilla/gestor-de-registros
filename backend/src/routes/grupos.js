@@ -5,6 +5,8 @@ import pool from '../db.js';
 
 const router = Router();
 
+const MAX_TURNOS = 60;
+
 // GET /api/grupos — listar todos los grupos
 router.get('/', async (req, res, next) => {
   try {
@@ -33,6 +35,8 @@ router.post('/', async (req, res, next) => {
     const tcp = total_clases_planificadas != null ? parseInt(total_clases_planificadas, 10) : null;
     if (tcp !== null && (isNaN(tcp) || tcp <= 0))
       return res.status(400).json({ error: 'total_clases_planificadas debe ser un entero positivo' });
+    if (tcp !== null && tcp > MAX_TURNOS)
+      return res.status(400).json({ error: `total_clases_planificadas no puede superar ${MAX_TURNOS}` });
 
     await client.query('BEGIN');
 
@@ -80,6 +84,8 @@ router.put('/:id', async (req, res, next) => {
       const tcp = total_clases_planificadas != null ? parseInt(total_clases_planificadas, 10) : null;
       if (tcp !== null && (isNaN(tcp) || tcp <= 0))
         return res.status(400).json({ error: 'total_clases_planificadas debe ser un entero positivo' });
+      if (tcp !== null && tcp > MAX_TURNOS)
+        return res.status(400).json({ error: `total_clases_planificadas no puede superar ${MAX_TURNOS}` });
       campos.push(`total_clases_planificadas = $${idx++}`);
       valores.push(tcp);
     }

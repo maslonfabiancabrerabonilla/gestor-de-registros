@@ -6,6 +6,7 @@ import pool from '../db.js';
 const router = Router();
 
 const TIPOS_VALIDOS = ['C', 'CP', 'PL', 'PP', 'PF', 'PE', 'EM'];
+const MAX_TURNOS = 60;
 
 // GET /api/grupos/:grupo_id/turnos — listar turnos activos (orden cronológico)
 router.get('/:grupo_id/turnos', async (req, res, next) => {
@@ -37,6 +38,18 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
 
     await client.query('BEGIN');
 
+    // Verificar límite absoluto de turnos (máximo 60)
+    const countRes = await client.query(
+      'SELECT COUNT(*)::int AS total FROM turnos WHERE grupo_id = $1',
+      [grupo_id]
+    );
+    const totalActual = countRes.rows[0].total;
+
+    if (totalActual >= MAX_TURNOS) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `No se pueden crear más de ${MAX_TURNOS} turnos por grupo` });
+    }
+
     // Verificar límite de turnos si el grupo tiene total_clases_planificadas
     const grupoRes = await client.query(
       'SELECT total_clases_planificadas FROM grupos WHERE id = $1',
@@ -44,15 +57,9 @@ router.post('/:grupo_id/turnos', async (req, res, next) => {
     );
     if (grupoRes.rows.length) {
       const tcp = grupoRes.rows[0].total_clases_planificadas;
-      if (tcp !== null) {
-        const countRes = await client.query(
-          'SELECT COUNT(*)::int AS total FROM turnos WHERE grupo_id = $1',
-          [grupo_id]
-        );
-        if (countRes.rows[0].total >= tcp) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({ error: `Ya se alcanzó el límite de ${tcp} turnos planificados` });
-        }
+      if (tcp !== null && totalActual >= tcp) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Ya se alcanzó el límite de ${tcp} turnos planificados` });
       }
     }
 

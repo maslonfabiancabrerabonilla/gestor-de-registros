@@ -7,7 +7,7 @@ import {
   createEstudiante, updateEstudiante, deleteEstudiante, bulkImportEstudiantes,
   batchSave, generarCorte, exportarMatriz,
 } from '../services/api.js';
-import { TIPOS_CLASE }         from '../constants.js';
+import { TIPOS_CLASE, MAX_TURNOS } from '../constants.js';
 import { descargarBlob }       from '../utils/descargarBlob.js';
 import TablaRegistros          from '../components/TablaRegistros.jsx';
 import ModalTurno              from '../components/ModalTurno.jsx';
@@ -160,7 +160,7 @@ export default function PageRegistros() {
             onClick={() => setModalEstudiante(true)}
             className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-white/15 text-white border border-white/20 rounded-lg hover:bg-white/25 transition"
           ><UserPlus className="w-3.5 h-3.5" /> Estudiantes</button>
-          {(!grupo?.total_clases_planificadas || turnos.length < grupo.total_clases_planificadas) && (
+          {turnos.length < MAX_TURNOS && (!grupo?.total_clases_planificadas || turnos.length < grupo.total_clases_planificadas) && (
             <button
               onClick={abrirNuevoTurno}
               className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-white text-indigo-700 font-medium rounded-lg hover:bg-indigo-50 transition shadow-md shadow-indigo-900/20"

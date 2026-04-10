@@ -63,6 +63,14 @@ describe('API /api/grupos', () => {
     assert.equal(res.status, 400);
   });
 
+  it('POST / — rechaza total_clases_planificadas mayor a 60', async () => {
+    const res = await request(app)
+      .post('/api/grupos')
+      .send({ nombre: 'TGRP_Exceso', asignatura: 'Bio', total_clases_planificadas: 61 });
+    assert.equal(res.status, 400);
+    assert.match(res.body.error, /60/);
+  });
+
   it('POST / — crea turnos plantilla con total_clases_planificadas', async () => {
     const res = await request(app)
       .post('/api/grupos')

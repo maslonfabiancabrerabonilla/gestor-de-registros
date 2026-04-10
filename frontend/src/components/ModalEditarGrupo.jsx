@@ -1,6 +1,7 @@
 // Modal para editar datos de un grupo existente
 import { useState } from 'react';
 import { updateGrupo } from '../services/api.js';
+import { MAX_TURNOS }  from '../constants.js';
 import { Pencil, Loader2 } from 'lucide-react';
 
 export default function ModalEditarGrupo({ grupo, onCerrar, onGuardado }) {
@@ -22,6 +23,10 @@ export default function ModalEditarGrupo({ grupo, onCerrar, onGuardado }) {
     e.preventDefault();
     if (!form.nombre.trim())     return setError('El nombre del grupo es obligatorio.');
     if (!form.asignatura.trim()) return setError('La asignatura es obligatoria.');
+
+    const tcpVal = form.total_clases_planificadas !== '' ? parseInt(form.total_clases_planificadas, 10) : null;
+    if (tcpVal !== null && tcpVal > MAX_TURNOS)
+      return setError(`El total de clases planificadas no puede superar ${MAX_TURNOS}.`);
 
     setCargando(true);
     try {
@@ -101,6 +106,7 @@ export default function ModalEditarGrupo({ grupo, onCerrar, onGuardado }) {
               name="total_clases_planificadas"
               type="number"
               min="1"
+              max={MAX_TURNOS}
               value={form.total_clases_planificadas}
               onChange={handleChange}
               placeholder="Ej: 20"

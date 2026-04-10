@@ -134,4 +134,28 @@ describe('API /api/grupos/:gid/turnos', () => {
       .delete(`/api/grupos/${grupoId}/turnos/${turnoId}`);
     assert.equal(res.status, 404);
   });
+
+  // ── Límite de 60 turnos ─────────────────────────────────────
+  it('POST / — rechaza turno cuando el grupo alcanza 60', async () => {
+    // Crear grupo limpio para esta prueba
+    const grp = await request(app)
+      .post('/api/grupos')
+      .send({ nombre: 'TEST_TurnoLimit60', asignatura: 'Límite' });
+    const gid = grp.body.id;
+
+    // Insertar 60 turnos directamente en BD (más rápido)
+    for (let i = 1; i <= 60; i++) {
+      await pool.query(
+        `INSERT INTO turnos (grupo_id, numero_turno, tipo) VALUES ($1, $2, 'C')`,
+        [gid, i]
+      );
+    }
+
+    // El turno 61 debe ser rechazado
+    const res = await request(app)
+      .post(`/api/grupos/${gid}/turnos`)
+      .send({ tipo: 'C' });
+    assert.equal(res.status, 400);
+    assert.match(res.body.error, /60/);
+  });
 });
