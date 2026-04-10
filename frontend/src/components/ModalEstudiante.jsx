@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { UserPlus, Upload, X, Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
 
 // Modal para agregar un solo estudiante o importar Excel masivo
 const NOMBRE_REGEX = /^[\p{L}\s\-.]+$/u;
@@ -52,12 +53,20 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-modal">
+        <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-600" />
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800">Agregar Estudiantes</h2>
-          <button onClick={onCerrar} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-100 rounded-xl p-2">
+              <UserPlus className="w-5 h-5 text-indigo-600" />
+            </div>
+            <h2 className="font-semibold text-slate-800">Agregar Estudiantes</h2>
+          </div>
+          <button onClick={onCerrar} className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {resultado ? (
@@ -93,13 +102,14 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
               <div className="flex justify-end gap-2 mt-1">
                 <button
                   onClick={() => { setResultado(null); setArchivo(null); }}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition"
                 >
+                  <RotateCcw className="w-3.5 h-3.5" />
                   Reintentar
                 </button>
                 <button
                   onClick={onCerrar}
-                  className="px-5 py-2 text-sm font-medium bg-slate-600 text-white rounded-lg hover:bg-slate-700"
+                  className="px-5 py-2.5 text-sm font-medium bg-slate-600 text-white rounded-xl hover:bg-slate-700 transition"
                 >
                   Cerrar
                 </button>
@@ -136,14 +146,16 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
             <div className="flex justify-end gap-2 mt-1">
               <button
                 onClick={() => { setResultado(null); setArchivo(null); }}
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition"
               >
+                <RotateCcw className="w-3.5 h-3.5" />
                 Importar más
               </button>
               <button
                 onClick={onGuardado}
-                className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-indigo-500/25 transition"
               >
+                <CheckCircle2 className="w-4 h-4" />
                 Listo
               </button>
             </div>
@@ -157,13 +169,13 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
                 <button
                   key={m}
                   onClick={() => { setModo(m); setError(''); }}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors
                     ${modo === m
-                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      ? 'border-b-2 border-indigo-500 text-indigo-600'
                       : 'text-slate-500 hover:text-slate-700'
                     }`}
                 >
-                  {m === 'manual' ? '✏️ Manual' : '📊 Importar Excel'}
+                  {m === 'manual' ? <><UserPlus className="w-4 h-4" /> Manual</> : <><Upload className="w-4 h-4" /> Importar Excel</>}
                 </button>
               ))}
             </div>
@@ -184,20 +196,20 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
                       maxLength={150}
                       required
                       autoFocus
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 input-glow transition"
                     />
                   </div>
                   {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">❌ {error}</p>}
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={onCerrar} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">
+                    <button type="button" onClick={onCerrar} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition">
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={cargando || !nombre.trim()}
-                      className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 shadow-md shadow-indigo-500/25 transition"
                     >
-                      {cargando ? 'Guardando…' : 'Agregar'}
+                      {cargando ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando…</> : 'Agregar'}
                     </button>
                   </div>
                 </form>
@@ -216,20 +228,20 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
                       type="file"
                       accept=".xlsx,.xls"
                       onChange={e => setArchivo(e.target.files?.[0] ?? null)}
-                      className="w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-4 file:border-0 file:bg-blue-50 file:text-blue-700 file:rounded-lg file:text-xs file:font-medium hover:file:bg-blue-100 cursor-pointer"
+                      className="w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-4 file:border-0 file:bg-indigo-50 file:text-indigo-700 file:rounded-xl file:text-xs file:font-medium hover:file:bg-indigo-100 cursor-pointer"
                     />
                   </div>
                   {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">❌ {error}</p>}
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={onCerrar} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">
+                    <button type="button" onClick={onCerrar} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition">
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={cargando || !archivo}
-                      className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 shadow-md shadow-indigo-500/25 transition"
                     >
-                      {cargando ? 'Importando…' : 'Importar'}
+                      {cargando ? <><Loader2 className="w-4 h-4 animate-spin" /> Importando…</> : <><Upload className="w-4 h-4" /> Importar</>}
                     </button>
                   </div>
                 </form>

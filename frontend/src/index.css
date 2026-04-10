@@ -2,8 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Scroll fino en la tabla horizontal */
-.tabla-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: #93e3a7 transparent;
+/* ── Fondo global con gradiente sutil ────────────────────── */
+body {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0f9ff 100%);
+  min-height: 100vh;
+}
+
+/* ── Scrollbar fino ──────────────────────────────────────── */
+.tabla-scroll,
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+* { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+
+/* ── Animación de entrada para modales ───────────────────── */
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+.animate-modal { animation: modal-in 0.2s ease-out; }
+
+/* ── Animación fade-in para cards ────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.3s ease-out both; }
+
+/* ── Glow sutil para inputs en focus ─────────────────────── */
+.input-glow:focus {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }

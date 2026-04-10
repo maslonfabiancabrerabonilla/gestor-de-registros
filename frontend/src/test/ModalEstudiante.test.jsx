@@ -117,7 +117,9 @@ describe('ModalEstudiante', () => {
   it('cierra modal al hacer clic en ×', async () => {
     const user = userEvent.setup();
     render(<ModalEstudiante {...defaultProps} />);
-    await user.click(screen.getByText('×'));
+    // El botón de cerrar usa un icono SVG (lucide X), lo buscamos por su clase lucide
+    const closeBtn = document.querySelector('button .lucide-x').closest('button');
+    await user.click(closeBtn);
     expect(defaultProps.onCerrar).toHaveBeenCalled();
   });
 });

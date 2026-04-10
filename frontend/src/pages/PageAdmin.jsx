@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate }            from 'react-router-dom';
 import { getGrupo, getAuditoria } from '../services/api.js';
+import { ArrowLeft, Shield, RefreshCw, Loader2, ClipboardList } from 'lucide-react';
 
 const ACCION_LABEL = {
   crear_turno:            'Turno creado',
@@ -54,37 +55,49 @@ export default function PageAdmin() {
 
   if (cargando) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-400 text-sm">Cargando administración...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+          <span className="text-sm">Cargando administración...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
 
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4">
+      <header className="bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 px-6 py-5 shadow-lg shadow-slate-900/20">
         <button
           onClick={() => navigate(`/grupos/${id}`)}
-          className="text-sm text-blue-600 hover:underline mb-1 block"
+          className="flex items-center gap-1 text-sm text-slate-300 hover:text-white transition mb-1"
         >
-          &larr; Volver a {grupo?.nombre ?? 'Registros'}
+          <ArrowLeft className="w-3.5 h-3.5" /> Volver a {grupo?.nombre ?? 'Registros'}
         </button>
-        <h1 className="text-xl font-bold text-slate-800">Administración</h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          {grupo?.nombre} · {grupo?.asignatura}
-        </p>
+        <div className="flex items-center gap-3">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-tight">Administración</h1>
+            <p className="text-xs text-slate-300 mt-0.5">
+              {grupo?.nombre} · {grupo?.asignatura}
+            </p>
+          </div>
+        </div>
       </header>
 
       {/* Toolbar */}
-      <div className="bg-white border-b border-slate-100 px-6 py-2 flex items-center gap-1">
-        <span className="text-sm font-medium text-slate-600">📋 Historial de auditoría</span>
+      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-6 py-2.5 flex items-center gap-1">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
+          <ClipboardList className="w-4 h-4 text-indigo-400" /> Historial de auditoría
+        </div>
         <button
           onClick={cargar}
-          className="ml-auto text-xs text-blue-500 hover:underline self-center"
+          className="flex items-center gap-1 ml-auto text-xs text-indigo-500 hover:text-indigo-700 transition"
         >
-          Recargar
+          <RefreshCw className="w-3 h-3" /> Recargar
         </button>
       </div>
 
@@ -105,7 +118,7 @@ export default function PageAdmin() {
             {auditoria.length === 0 ? (
               <p className="text-slate-400 text-sm py-8 text-center">No hay registros de auditoría aún.</p>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm shadow-slate-200/50">
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 text-left">

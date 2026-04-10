@@ -11,6 +11,7 @@ import ModalTurno              from '../components/ModalTurno.jsx';
 import ModalEstudiante         from '../components/ModalEstudiante.jsx';
 import ModalEditarEstudiante   from '../components/ModalEditarEstudiante.jsx';
 import ModalConfirmar          from '../components/ModalConfirmar.jsx';
+import { ArrowLeft, UserPlus, CalendarPlus, Download, Settings, Users, Calendar, FileSpreadsheet, RefreshCw, Loader2 } from 'lucide-react';
 
 function descargarBlob(blob, nombreArchivo) {
   const url = URL.createObjectURL(blob);
@@ -129,67 +130,73 @@ export default function PageRegistros() {
 
   if (cargando) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-400 text-sm">Cargando datos del grupo...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+          <span className="text-sm">Cargando datos del grupo...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
 
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-start justify-between gap-4 flex-wrap">
+      <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-6 py-4 flex items-start justify-between gap-4 flex-wrap shadow-lg shadow-indigo-500/20">
         <div>
-          <button onClick={() => navigate('/')} className="text-sm text-blue-600 hover:underline mb-1 block">
-            &larr; Mis Grupos
+          <button onClick={() => navigate('/')} className="flex items-center gap-1 text-sm text-blue-100 hover:text-white transition mb-1">
+            <ArrowLeft className="w-3.5 h-3.5" /> Mis Grupos
           </button>
-          <h1 className="text-xl font-bold text-slate-800">{grupo?.nombre}</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h1 className="text-xl font-bold text-white tracking-tight">{grupo?.nombre}</h1>
+          <p className="text-xs text-blue-100 mt-0.5">
             {grupo?.asignatura}
-            {grupo?.semestre && <span className="ml-1 text-slate-400">&middot; {grupo.semestre}</span>}
+            {grupo?.semestre && <span className="ml-1 text-blue-200">&middot; {grupo.semestre}</span>}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setModalEstudiante(true)}
-            className="px-3 py-2 text-sm bg-white border border-slate-200 text-slate-700 rounded-lg hover:border-blue-300 hover:text-blue-700 transition"
-          >+ Agregar Estudiantes</button>
+            className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-xl hover:bg-white/25 transition"
+          ><UserPlus className="w-4 h-4" /> Estudiantes</button>
           {(!grupo?.total_clases_planificadas || turnos.length < grupo.total_clases_planificadas) && (
             <button
               onClick={abrirNuevoTurno}
-              className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >+ Nuevo Turno</button>
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white text-indigo-700 font-medium rounded-xl hover:bg-indigo-50 transition shadow-md shadow-indigo-900/20"
+            ><CalendarPlus className="w-4 h-4" /> Nuevo Turno</button>
           )}
           <div className="relative group">
             <button
               disabled={exportando}
-              className="px-3 py-2 text-sm bg-white border border-slate-200 text-slate-700 rounded-lg hover:border-green-400 hover:text-green-700 transition disabled:opacity-50"
-            >{exportando ? 'Exportando...' : 'Exportar'}</button>
-            <div className="absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all z-30">
-              <button onClick={() => exportarExcel('corte')} className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">
-                Reporte de corte
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-xl hover:bg-white/25 transition disabled:opacity-50"
+            ><Download className="w-4 h-4" /> {exportando ? 'Exportando...' : 'Exportar'}</button>
+            <div className="absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-xl py-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all z-30">
+              <button onClick={() => exportarExcel('corte')} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition">
+                <FileSpreadsheet className="w-4 h-4 text-green-600" /> Reporte de corte
               </button>
-              <button onClick={() => exportarExcel('matriz')} className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">
-                Matriz completa
+              <button onClick={() => exportarExcel('matriz')} className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition">
+                <FileSpreadsheet className="w-4 h-4 text-green-600" /> Matriz completa
               </button>
             </div>
           </div>
           <button
             onClick={() => navigate(`/grupos/${id}/admin`)}
-            className="px-3 py-2 text-sm bg-white border border-slate-200 text-slate-700 rounded-lg hover:border-slate-400 hover:text-slate-800 transition"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white/15 backdrop-blur-sm text-white border border-white/20 rounded-xl hover:bg-white/25 transition"
             title="Administración del grupo"
-          >⚙ Admin</button>
+          ><Settings className="w-4 h-4" /> Admin</button>
         </div>
       </header>
 
-      <div className="bg-white border-b border-slate-100 px-6 py-2 flex items-center gap-5 text-sm text-slate-500 flex-wrap">
-        <span><span className="font-semibold text-slate-700">{resumen.estudiantes}</span> estudiantes</span>
+      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-6 py-2.5 flex items-center gap-5 text-sm text-slate-500 flex-wrap">
+        <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-indigo-400" /><span className="font-semibold text-slate-700">{resumen.estudiantes}</span> estudiantes</span>
         <span className="text-slate-300">|</span>
-        <span>
+        <span className="flex items-center gap-1.5">
+          <Calendar className="w-4 h-4 text-indigo-400" />
           <span className="font-semibold text-slate-700">{resumen.turnos}</span> turnos
           {resumen.turnos > 0 && <span className="ml-1 text-slate-400">({resumen.turnosClase} clases &middot; {resumen.turnosPrueba} pruebas)</span>}
         </span>
-        <button onClick={cargar} className="ml-auto text-xs text-blue-500 hover:underline">Recargar</button>
+        <button onClick={cargar} className="flex items-center gap-1 ml-auto text-xs text-indigo-500 hover:text-indigo-700 transition">
+          <RefreshCw className="w-3 h-3" /> Recargar
+        </button>
       </div>
 
       <main className="flex-1 p-4 md:p-6">

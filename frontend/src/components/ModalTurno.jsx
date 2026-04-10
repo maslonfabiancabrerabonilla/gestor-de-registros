@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { CalendarPlus, Pencil, X, Loader2 } from 'lucide-react';
 
 const TIPOS = [
   { value: 'C',  label: 'C  — Clase',            grupo: 'clase'  },
@@ -47,14 +48,22 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-modal">
+        <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-600" />
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800">
-            {editando ? 'Editar Turno' : 'Nuevo Turno'}
-          </h2>
-          <button onClick={onCerrar} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-100 rounded-xl p-2">
+              {editando ? <Pencil className="w-5 h-5 text-indigo-600" /> : <CalendarPlus className="w-5 h-5 text-indigo-600" />}
+            </div>
+            <h2 className="font-semibold text-slate-800">
+              {editando ? 'Editar Turno' : 'Nuevo Turno'}
+            </h2>
+          </div>
+          <button onClick={onCerrar} className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Formulario */}
@@ -72,9 +81,9 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
                   {TIPOS.filter(t => t.grupo === g).map(t => (
                     <label
                       key={t.value}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer text-sm transition-all
                         ${tipo === t.value
-                          ? 'border-blue-500 bg-blue-50 text-blue-800 font-medium'
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-800 font-medium shadow-sm shadow-indigo-500/10'
                           : 'border-slate-200 hover:border-slate-300 text-slate-600'
                         }`}
                     >
@@ -101,7 +110,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
               type="date"
               value={fecha}
               onChange={e => setFecha(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 input-glow transition"
             />
             {!fecha && <p className="text-xs text-amber-500 mt-1">Sin fecha — no se podrán registrar asistencias hasta definirla</p>}
           </div>
@@ -117,7 +126,7 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
               onChange={e => setDescripcion(e.target.value)}
               placeholder="Ej: Introducción a álgebra lineal"
               maxLength={200}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 input-glow transition"
             />
           </div>
 
@@ -130,16 +139,16 @@ export default function ModalTurno({ grupoId, turno, onGuardado, onCerrar, creat
             <button
               type="button"
               onClick={onCerrar}
-              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={cargando}
-              className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
+              className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition shadow-md shadow-indigo-500/25"
             >
-              {cargando ? 'Guardando…' : editando ? 'Actualizar' : 'Crear Turno'}
+              {cargando ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando…</> : editando ? 'Actualizar' : 'Crear Turno'}
             </button>
           </div>
         </form>

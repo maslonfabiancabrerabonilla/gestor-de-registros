@@ -1,6 +1,7 @@
 // Grilla principal: estudiantes (filas) × turnos (columnas)
 // Celdas editables con cambios pendientes y guardado por turno
 import { useState, useCallback, useEffect } from 'react';
+import { Pencil, Trash2, Save, Undo2, AlertTriangle } from 'lucide-react';
 
 // ── Constantes de estilo ──────────────────────────────────────
 const TIPO_COLOR = {
@@ -186,7 +187,7 @@ export default function TablaRegistros({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-200/50">
       <table className="border-collapse text-sm min-w-full">
 
         {/* ── Cabecera ──────────────────────────────────────── */}
@@ -217,17 +218,17 @@ export default function TablaRegistros({
                     </span>
                   )}
                   {/* Acciones del turno */}
-                  <div className="flex gap-1 mt-0.5">
+                  <div className="flex gap-1.5 mt-0.5">
                     <button
                       onClick={() => onEditarTurno?.(t)}
-                      className="text-[10px] text-blue-500 hover:underline"
+                      className="p-0.5 text-blue-400 hover:text-blue-600 transition"
                       title="Editar turno"
-                    >✏️</button>
+                    ><Pencil className="w-3 h-3" /></button>
                     <button
                       onClick={() => onEliminarTurno?.(t)}
-                      className="text-[10px] text-red-400 hover:underline"
+                      className="p-0.5 text-slate-300 hover:text-red-500 transition"
                       title="Eliminar turno"
-                    >🗑</button>
+                    ><Trash2 className="w-3 h-3" /></button>
                   </div>
                 </div>
               </th>
@@ -259,15 +260,17 @@ export default function TablaRegistros({
                       <button
                         onClick={() => guardarTurno(t.id)}
                         disabled={guardando[t.id]}
-                        className="text-[10px] px-2 py-0.5 bg-green-600 text-white rounded font-medium hover:bg-green-700 disabled:opacity-50 w-full"
+                        className="flex items-center justify-center gap-0.5 text-[10px] px-2 py-0.5 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 w-full transition"
                       >
-                        {guardando[t.id] ? '…' : '💾 Guardar'}
+                        <Save className="w-3 h-3" />
+                        {guardando[t.id] ? '…' : 'Guardar'}
                       </button>
                       <button
                         onClick={() => descartarTurno(t.id)}
                         disabled={guardando[t.id]}
-                        className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded hover:bg-slate-200 disabled:opacity-50 w-full"
+                        className="flex items-center justify-center gap-0.5 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md hover:bg-slate-200 disabled:opacity-50 w-full transition"
                       >
+                        <Undo2 className="w-3 h-3" />
                         Descartar
                       </button>
                       {errGuardar[t.id] && (
@@ -293,25 +296,27 @@ export default function TablaRegistros({
             const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
 
             return (
-              <tr key={est.id} className={`${rowBg} hover:bg-blue-50/30 transition-colors`}>
+              <tr key={est.id} className={`${rowBg} hover:bg-indigo-50/30 transition-colors`}>
 
                 {/* Nombre */}
                 <td className={`sticky left-0 z-10 border-b border-r border-slate-200 px-4 py-2 font-medium text-slate-800 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-1.5 w-[200px]">
                     {stats.alerta && (
-                      <span title={`Inasistencias: ${(100 - stats.pct).toFixed(1)}%`} className="cursor-help">⚠️</span>
+                      <span title={`Inasistencias: ${(100 - stats.pct).toFixed(1)}%`} className="cursor-help text-amber-500">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                      </span>
                     )}
                     <span className="break-words min-w-0 flex-1" title={est.nombre}>{est.nombre}</span>
                     <button
                       onClick={() => onEditarEstudiante?.(est)}
                       title="Editar estudiante"
-                      className="ml-auto text-slate-300 hover:text-blue-400 transition text-xs leading-none shrink-0"
-                    >✏️</button>
+                      className="ml-auto text-slate-300 hover:text-indigo-500 transition leading-none shrink-0"
+                    ><Pencil className="w-3 h-3" /></button>
                     <button
                       onClick={() => onEliminarEstudiante?.(est)}
                       title="Eliminar estudiante"
-                      className="text-slate-300 hover:text-red-400 transition text-xs leading-none shrink-0"
-                    >🗑</button>
+                      className="text-slate-300 hover:text-red-400 transition leading-none shrink-0"
+                    ><Trash2 className="w-3 h-3" /></button>
                   </div>
                 </td>
 

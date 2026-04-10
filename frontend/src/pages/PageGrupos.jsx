@@ -4,6 +4,7 @@ import { getGrupos, deleteGrupo } from '../services/api.js';
 import ModalCrearGrupo         from '../components/ModalCrearGrupo.jsx';
 import ModalEditarGrupo        from '../components/ModalEditarGrupo.jsx';
 import ModalConfirmar          from '../components/ModalConfirmar.jsx';
+import { Plus, ArrowRight, Pencil, Settings, Trash2, GraduationCap, BookOpen, FolderOpen } from 'lucide-react';
 
 export default function PageGrupos() {
   const navigate = useNavigate();
@@ -56,30 +57,41 @@ export default function PageGrupos() {
 
   // ── Render ─────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">Sistema de Gestión Docente</h1>
-          <p className="text-xs text-slate-500">Universidad de las Ciencias Informáticas</p>
+      <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-6 py-5 flex items-center justify-between shadow-lg shadow-indigo-500/20">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/20 backdrop-blur-sm rounded-xl p-2.5">
+            <GraduationCap className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-tight">Sistema de Gestión Docente</h1>
+            <p className="text-xs text-blue-100">Universidad de las Ciencias Informáticas</p>
+          </div>
         </div>
       </header>
 
       {/* Contenido */}
       <main className="max-w-3xl mx-auto py-10 px-4">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-slate-700">Mis Grupos</h2>
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-indigo-500" />
+            <h2 className="text-lg font-semibold text-slate-700">Mis Grupos</h2>
+          </div>
           <button
             onClick={() => setModalAbierto(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30"
           >
-            <span className="text-lg leading-none">+</span> Nuevo Grupo
+            <Plus className="w-4 h-4" /> Nuevo Grupo
           </button>
         </div>
 
         {/* Estado de carga */}
         {cargando && (
-          <div className="text-center py-16 text-slate-400">Cargando grupos...</div>
+          <div className="text-center py-16 text-slate-400">
+            <div className="inline-block w-8 h-8 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-3" />
+            <p>Cargando grupos...</p>
+          </div>
         )}
 
         {error && !cargando && (
@@ -90,60 +102,70 @@ export default function PageGrupos() {
 
         {/* Lista de grupos */}
         {!cargando && !error && grupos.length === 0 && (
-          <div className="text-center py-16 text-slate-400">
-            <p className="text-4xl mb-3">📋</p>
-            <p className="font-medium">No tienes grupos aún.</p>
-            <p className="text-sm">Crea el primero con el botón de arriba.</p>
+          <div className="text-center py-20 text-slate-400 animate-fade-up">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 mb-4">
+              <FolderOpen className="w-8 h-8 text-indigo-400" />
+            </div>
+            <p className="font-medium text-slate-600">No tienes grupos aún.</p>
+            <p className="text-sm mt-1">Crea el primero con el botón de arriba.</p>
           </div>
         )}
 
         {!cargando && grupos.length > 0 && (
           <ul className="flex flex-col gap-3">
-            {grupos.map(grupo => (
+            {grupos.map((grupo, i) => (
               <li
                 key={grupo.id}
-                className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition flex items-center justify-between px-5 py-4 group"
+                className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200 transition-all duration-300 flex items-center justify-between px-5 py-4 group animate-fade-up"
+                style={{ animationDelay: `${i * 50}ms` }}
               >
                 {/* Info del grupo */}
                 <button
-                  className="flex-1 text-left"
+                  className="flex-1 text-left flex items-center gap-3"
                   onClick={() => navigate(`/grupos/${grupo.id}`)}
                 >
-                  <p className="font-semibold text-slate-800 group-hover:text-blue-600 transition">
-                    {grupo.nombre}
-                  </p>
-                  <p className="text-sm text-slate-500 mt-0.5">
-                    {grupo.asignatura}
-                    {grupo.semestre && <span className="ml-2 text-slate-400">· {grupo.semestre}</span>}
-                  </p>
+                  <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-2.5 shadow-md shadow-indigo-500/20 group-hover:shadow-lg group-hover:shadow-indigo-500/30 transition-all">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800 group-hover:text-indigo-600 transition">
+                      {grupo.nombre}
+                    </p>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                      {grupo.asignatura}
+                      {grupo.semestre && <span className="ml-2 text-slate-400">· {grupo.semestre}</span>}
+                    </p>
+                  </div>
                 </button>
 
                 {/* Acciones */}
-                <div className="flex items-center gap-2 ml-4">
+                <div className="flex items-center gap-1.5 ml-4">
                   <button
                     onClick={() => navigate(`/grupos/${grupo.id}`)}
-                    className="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 font-medium rounded-lg hover:bg-blue-100 transition"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-indigo-50 text-indigo-700 font-medium rounded-lg hover:bg-indigo-100 transition"
                   >
-                    Abrir →
+                    <ArrowRight className="w-3.5 h-3.5" /> Abrir
                   </button>
                   <button
                     onClick={() => setGrupoEditar(grupo)}
-                    className="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg transition"
+                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                    title="Editar grupo"
                   >
-                    Editar
+                    <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => navigate(`/grupos/${grupo.id}/admin`)}
-                    className="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg transition"
+                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
                     title="Administración del grupo"
                   >
-                    ⚙ Admin
+                    <Settings className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => confirmarEliminar(grupo)}
-                    className="px-3 py-1.5 text-sm text-red-500 hover:bg-red-50 rounded-lg transition"
+                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    title="Eliminar grupo"
                   >
-                    Eliminar
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </li>
