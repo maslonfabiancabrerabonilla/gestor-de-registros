@@ -35,7 +35,6 @@ services:
   - type: web
     name: sgd-uci-frontend
     runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm install --include=dev && npm run build
     staticPublishPath: dist
