@@ -48,14 +48,19 @@ app.use((err, req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message || 'Error interno del servidor' });
 });
 
-// ── Iniciar servidor ──────────────────────────────────────────
-const server = app.listen(port, () => {
-  console.log(`✓ Servidor en puerto ${port}`);
-  console.log(`✓ BD: ${process.env.POSTGRES_DB ?? 'configurada'}`);
-});
+// ── Iniciar servidor (solo si se ejecuta directamente) ───────
+const isMainModule = process.argv[1] && import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`;
+if (isMainModule || process.env.NODE_ENV !== 'test') {
+  const server = app.listen(port, () => {
+    console.log(`✓ Servidor en puerto ${port}`);
+    console.log(`✓ BD: ${process.env.POSTGRES_DB ?? 'configurada'}`);
+  });
 
-// ── Graceful shutdown ─────────────────────────────────────────
-process.on('SIGTERM', () => {
-  console.log('SIGTERM: cerrando servidor...');
-  server.close(() => pool.end(() => process.exit(0)));
-});
+  // ── Graceful shutdown ─────────────────────────────────────────
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM: cerrando servidor...');
+    server.close(() => pool.end(() => process.exit(0)));
+  });
+}
+
+export default app;
