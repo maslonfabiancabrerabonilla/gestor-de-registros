@@ -30,10 +30,7 @@ services:
           name: sgd-uci-db
           property: connectionString
       - key: CORS_ORIGIN
-        fromService:
-          type: web
-          name: sgd-uci-frontend
-          property: url
+        value: https://sgd-uci-frontend.onrender.com
 
   # ── Frontend (Static Site) ────────────────────────────────
   - type: web
@@ -56,7 +53,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: sgd-uci-api
-          property: url
+        value: https://sgd-uci-api.onrender.com
