@@ -11,11 +11,11 @@ export default defineConfig({
     // sin necesidad de CORS ni de escribir la URL completa en el código
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
