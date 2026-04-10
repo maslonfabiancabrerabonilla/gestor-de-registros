@@ -38,8 +38,12 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
     setCargando(true);
     try {
       const res = await bulkImportEstudiantes(grupoId, archivo);
-      // res = { importados, duplicados, errores, ... }
-      setResultado(res);
+      if (res.exito === false) {
+        // Respuesta estructurada de error (ej. duplicados en archivo)
+        setResultado(res);
+      } else {
+        setResultado(res);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -57,6 +61,51 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
         </div>
 
         {resultado ? (
+          resultado.exito === false ? (
+            /* ── Error estructurado (ej. duplicados en archivo) ── */
+            <div className="px-6 py-5 flex flex-col gap-4">
+              <p className="text-red-700 font-medium">⚠️ {resultado.error || 'Error en el archivo'}</p>
+              {resultado.errores?.length > 0 && (
+                <div className="max-h-48 overflow-y-auto border border-red-200 rounded-lg">
+                  <table className="w-full text-xs">
+                    <thead className="bg-red-50 sticky top-0">
+                      <tr>
+                        <th className="text-left px-3 py-2 text-red-700">Fila</th>
+                        <th className="text-left px-3 py-2 text-red-700">Nombre</th>
+                        <th className="text-left px-3 py-2 text-red-700">Detalle</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-red-100">
+                      {resultado.errores.map((e, i) => (
+                        <tr key={i} className="hover:bg-red-50/50">
+                          <td className="px-3 py-1.5 text-red-600 font-mono">{e.fila}</td>
+                          <td className="px-3 py-1.5 text-slate-700">{e.valor}</td>
+                          <td className="px-3 py-1.5 text-slate-500">{e.razon}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="text-xs text-slate-500">
+                Corrige los nombres duplicados en tu archivo Excel y vuelve a intentar.
+              </p>
+              <div className="flex justify-end gap-2 mt-1">
+                <button
+                  onClick={() => { setResultado(null); setArchivo(null); }}
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Reintentar
+                </button>
+                <button
+                  onClick={onCerrar}
+                  className="px-5 py-2 text-sm font-medium bg-slate-600 text-white rounded-lg hover:bg-slate-700"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          ) : (
           /* ── Resumen de importación ──────────────────────── */
           <div className="px-6 py-5 flex flex-col gap-4">
             <p className="text-slate-700 font-medium">Importación completada</p>
@@ -99,6 +148,7 @@ export default function ModalEstudiante({ grupoId, onGuardado, onCerrar, createE
               </button>
             </div>
           </div>
+          )
         ) : (
           <>
             {/* ── Tabs ─────────────────────────────────────── */}

@@ -41,10 +41,17 @@ export const updateEstudiante = (gid, eid, data) => fetch(`/api/grupos/${gid}/es
 export const deleteEstudiante = (gid, eid) =>
   fetch(`/api/grupos/${gid}/estudiantes/${eid}`, { method: 'DELETE' }).then(handleResponse);
 
-export const bulkImportEstudiantes = (gid, archivo) => {
+export const bulkImportEstudiantes = async (gid, archivo) => {
   const fd = new FormData();
   fd.append('archivo', archivo);
-  return fetch(`/api/grupos/${gid}/estudiantes/bulk-import`, { method: 'POST', body: fd }).then(handleResponse);
+  const res = await fetch(`/api/grupos/${gid}/estudiantes/bulk-import`, { method: 'POST', body: fd });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    // Si el backend envía datos estructurados (ej. duplicados), los devolvemos
+    if (body.errores) return { ...body, exito: false };
+    throw new Error(body.error || body.mensaje || `HTTP ${res.status}`);
+  }
+  return body;
 };
 
 // ── Turnos ────────────────────────────────────────────────────
