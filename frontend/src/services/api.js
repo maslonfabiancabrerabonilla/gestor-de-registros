@@ -5,7 +5,7 @@
 const handleResponse = async (res) => {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `HTTP ${res.status}`);
+    throw new Error(body.error || body.mensaje || `HTTP ${res.status}`);
   }
   return res.json();
 };

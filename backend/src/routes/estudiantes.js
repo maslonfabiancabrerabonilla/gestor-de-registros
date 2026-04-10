@@ -165,9 +165,10 @@ router.post('/:grupo_id/estudiantes/bulk-import', upload.single('archivo'), asyn
       }
     });
     if (erroresArchivo.length) {
+      const detalle = erroresArchivo.map(e => `"${e.valor}" (fila ${e.fila})`).join(', ');
       return res.status(409).json({
         exito: false,
-        mensaje: 'El archivo contiene nombres duplicados',
+        error: `El archivo contiene nombres duplicados: ${detalle}`,
         errores: erroresArchivo,
       });
     }
