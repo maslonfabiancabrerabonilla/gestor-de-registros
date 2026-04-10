@@ -187,7 +187,7 @@ export default function TablaRegistros({
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-200/50">
+    <div className="overflow-auto max-h-[75vh] rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-200/50">
       <table className="border-collapse text-sm min-w-full">
 
         {/* ── Cabecera ──────────────────────────────────────── */}
