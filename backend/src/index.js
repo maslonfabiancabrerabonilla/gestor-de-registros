@@ -21,11 +21,7 @@ const port = process.env.PORT || 5000;
 
 // ── Middlewares globales ──────────────────────────────────────
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',')
-    : '*',
-}));
+app.use(cors());
 app.use(express.json());
 
 // ── Rutas ─────────────────────────────────────────────────────

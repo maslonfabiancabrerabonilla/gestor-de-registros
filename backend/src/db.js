@@ -7,12 +7,7 @@ dotenv.config();
 
 const { Pool } = pkg;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ...(process.env.NODE_ENV === 'production' && {
-    ssl: { rejectUnauthorized: false },
-  }),
-});
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 pool.on('error', (err) => {
   console.error('Error inesperado en pool PostgreSQL:', err.message);
