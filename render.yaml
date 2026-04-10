@@ -1,0 +1,62 @@
+# ============================================================
+# render.yaml — Render Blueprint (Infrastructure as Code)
+# Uso: importar repositorio en Render Dashboard → detecta este archivo
+# Docs: https://docs.render.com/blueprint-spec
+# ============================================================
+
+databases:
+  - name: sgd-uci-db
+    plan: free
+    databaseName: docente_db
+    user: docente
+
+services:
+  # ── Backend (Web Service) ──────────────────────────────────
+  - type: web
+    name: sgd-uci-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sgd-uci-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: sgd-uci-frontend
+          property: url
+
+  # ── Frontend (Static Site) ────────────────────────────────
+  - type: web
+    name: sgd-uci-frontend
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: sgd-uci-api
+          property: url
