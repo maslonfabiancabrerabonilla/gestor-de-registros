@@ -144,7 +144,6 @@ export default function PageAdmin() {
               </div>
             )}
           </div>
-        </div>
       </main>
     </div>
   );
