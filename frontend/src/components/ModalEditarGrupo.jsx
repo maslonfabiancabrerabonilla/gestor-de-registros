@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { updateGrupo } from '../services/api.js';
 import { Pencil, Loader2 } from 'lucide-react';
-import { Pencil, Loader2 } from 'lucide-react';
 
 export default function ModalEditarGrupo({ grupo, onCerrar, onGuardado }) {
   const [form, setForm] = useState({
