@@ -6,7 +6,6 @@
 
 databases:
   - name: sgd-uci-db
-    plan: free
     databaseName: docente_db
     user: docente
 
